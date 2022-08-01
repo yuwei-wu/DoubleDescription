@@ -1,0 +1,7 @@
+<launch>
+  <arg name="rviz_config" default="$(find plan_manage)/rviz/config.rviz"/>
+  <node pkg="rviz"
+    type="rviz"
+    name="rviz"
+    args="-d $(arg rviz_config)"/>
+</launch>
