@@ -225,7 +225,6 @@ namespace opt_planner
     std::vector<Eigen::Vector3d> temp_pts;
     std::vector<double> temp_ts;
     
-
     //setup the pointcloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
     grid_map_->getPointCloud(cloud_ptr);
@@ -238,7 +237,7 @@ namespace opt_planner
       vec_obs[i](2) = cloud_ptr->points[i].z;
     }
 
-    
+   
     decomp_util_.set_obs(vec_obs);
     decomp_util_.set_local_bbox(Vec3f(2.0, 2.0, 1), Vec3f(bb_back_, 2.0, 1));
 
@@ -247,8 +246,6 @@ namespace opt_planner
     Eigen::Vector3d q;
     int query_index, cnt_num = 0;
     
-    std::cout << "the path_size is " << path_size << std::endl;
-
     // step 1 : set the intial lengh
     // add start time
     temp_ts.push_back(0.0);

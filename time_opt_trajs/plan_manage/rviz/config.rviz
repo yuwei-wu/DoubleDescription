@@ -8,15 +8,19 @@ Panels:
         - /quadrotor1
         - /quadrotor1/Path1/global_path1
         - /quadrotor1/Path1/local_path1
+        - /quadrotor1/Path1/optimal_path1
+        - /quadrotor1/Path1/traj1
         - /Image1
         - /Map1
-        - /Map1/grid_map1
+        - /Map1/inf_grid_map1
+        - /Map1/SFCs1
+        - /Map1/SFCs2
         - /dsol1/PoseArray1
         - /dsol1/Path1
         - /dsol1/Pose1
         - /Image2
       Splitter Ratio: 0.5
-    Tree Height: 494
+    Tree Height: 666
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -117,7 +121,7 @@ Visualization Manager:
           Displays:
             - Class: rviz/Marker
               Enabled: true
-              Marker Topic: /opt_planner_node/global_list
+              Marker Topic: /f250_ariel/opt_planner_node/global_list
               Name: global_path
               Namespaces:
                 {}
@@ -125,26 +129,26 @@ Visualization Manager:
               Value: true
             - Class: rviz/Marker
               Enabled: true
-              Marker Topic: /opt_planner_node/kino_astar_list
+              Marker Topic: /f250_ariel/opt_planner_node/kino_astar_list
               Name: local_path
               Namespaces:
-                {}
+                "": true
               Queue Size: 100
               Value: true
             - Class: rviz/Marker
               Enabled: true
-              Marker Topic: /opt_planner_node/optimal_list
+              Marker Topic: /f250_ariel/opt_planner_node/optimal_list
               Name: optimal_path
               Namespaces:
-                {}
+                "": true
               Queue Size: 100
               Value: true
             - Class: rviz/Marker
               Enabled: true
-              Marker Topic: /odom_visualization/trajectory
+              Marker Topic: /f250_ariel/odom_visualization/trajectory
               Name: traj
               Namespaces:
-                {}
+                trajectory: true
               Queue Size: 100
               Value: true
           Enabled: true
@@ -168,8 +172,36 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 3.049999952316284
-            Min Value: 1.0499999523162842
+            Max Value: 3.8499999046325684
+            Min Value: -0.05000000074505806
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz/PointCloud2
+          Color: 255; 255; 255
+          Color Transformer: AxisColor
+          Decay Time: 0
+          Enabled: true
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Min Color: 0; 0; 0
+          Name: inf_grid_map
+          Position Transformer: XYZ
+          Queue Size: 10
+          Selectable: true
+          Size (Pixels): 3
+          Size (m): 0.10000000149011612
+          Style: Flat Squares
+          Topic: /f250_ariel/opt_planner_node/grid_map/occupancy_inflate
+          Unreliable: false
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: true
+        - Alpha: 1
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 3.8499999046325684
+            Min Value: -0.05000000074505806
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -177,7 +209,7 @@ Visualization Manager:
           Color: 32; 74; 135
           Color Transformer: AxisColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Min Color: 0; 0; 0
@@ -192,7 +224,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Class: rviz/Marker
           Enabled: true
           Marker Topic: /quadrotor/pcl_render_node/semantics_local_vis
@@ -218,7 +250,7 @@ Visualization Manager:
           Queue Size: 10
           Scale: 0.10000000149011612
           State: Mesh
-          Topic: /opt_planner_node/sikangpolyhedron
+          Topic: /f250_ariel/opt_planner_node/sikangpolyhedron
           Unreliable: false
           Value: true
           VsColor: 0; 255; 0
@@ -528,7 +560,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 10.835226058959961
+      Distance: 15.003503799438477
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -544,19 +576,19 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0947962999343872
+      Pitch: 0.7797961831092834
       Target Frame: <Fixed Frame>
-      Yaw: 1.8735684156417847
+      Yaw: 2.9485723972320557
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1529
+  Height: 2086
   Hide Left Dock: false
-  Hide Right Dock: false
+  Hide Right Dock: true
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000033a0000052afc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006e00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000004700000235000000f100fffffffb000000260057006100790070006f0069006e00740020004e0061007600690067006100740069006f006e010000036b000003d80000000000000000fb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d0061006700650100000283000000f70000001900fffffffb0000001400760069006e0073005f0069006d00610067006501000003810000011d0000001900fffffffb0000000a0049006d00610067006501000004a5000000cc0000001900ffffff000000010000010f0000035afc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000035a000000c200fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000009be00000060fc0100000002fb0000000800540069006d00650100000000000009be0000037100fffffffb0000000800540069006d006501000000000000045000000000000000000000067d0000052a00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000033a0000071efc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006e000003080000018200fffffffb000000260057006100790070006f0069006e00740020004e0061007600690067006100740069006f006e010000036b000003d80000000000000000fb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d0061006700650100000382000001530000002600fffffffb0000001400760069006e0073005f0069006d00610067006501000004e1000001870000002600fffffffb0000000a0049006d0061006700650100000674000001180000002600ffffff000000010000010f0000035afc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000035a0000013200fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000f0000000060fc0100000002fb0000000800540069006d0065010000000000000f000000057100fffffffb0000000800540069006d0065010000000000000450000000000000000000000bba0000071e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -565,8 +597,8 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 2494
-  X: 66
-  Y: 34
+  Width: 3840
+  X: 0
+  Y: 0
   vins_image:
     collapsed: false

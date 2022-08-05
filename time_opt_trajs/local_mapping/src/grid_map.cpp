@@ -980,7 +980,7 @@ void GridMap::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &img)
   boundIndex(md_.local_bound_min_);
   boundIndex(md_.local_bound_max_);
 
-  // add virtual ceiling to limit flight height
+  //add virtual ceiling to limit flight height
   if (mp_.virtual_ceil_height_ > -0.5) {
     int ceil_id = floor((mp_.virtual_ceil_height_ - mp_.map_origin_(2)) * mp_.resolution_inv_) - 1;
     for (int x = md_.local_bound_min_(0); x <= md_.local_bound_max_(0); ++x)
@@ -1021,6 +1021,7 @@ void GridMap::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &img)
 // }
 
 void GridMap::getPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud_ptr){
+
 
   cloud_ptr = latest_cloud_;
   
