@@ -101,6 +101,10 @@ void GridMap::initMap(ros::NodeHandle &nh)
   cout << "max: " << mp_.clamp_max_log_ << endl;
   cout << "thresh log: " << mp_.min_occupancy_log_ << endl;
 
+  cout << "map size : " << mp_.map_size_ << endl;
+  cout << "map origin : " << mp_.map_origin_ << endl;
+
+
   for (int i = 0; i < 3; ++i)
     mp_.map_voxel_num_(i) = ceil(mp_.map_size_(i) / mp_.resolution_);
 
@@ -124,17 +128,17 @@ void GridMap::initMap(ros::NodeHandle &nh)
   md_.proj_points_.resize(mp_.depth_size_u_ * mp_.depth_size_v_ / mp_.skip_pixel_ / mp_.skip_pixel_);
   md_.proj_points_cnt = 0;
 
-  // md_.cam2body_ << 0.0, 0.0, 1.0, camera_offset(0),
-  //                 -1.0, 0.0, 0.0, camera_offset(1),
-  //                 0.0, -1.0, 0.0, camera_offset(2),
-  //                 0.0, 0.0, 0.0, 1.0;
-  md_.cam2body_ = Eigen::MatrixXd::Identity(4, 4);
-  md_.cam2body_.block<3,3>(0,0) = camera_q.toRotationMatrix();
-  md_.cam2body_(0,3) = camera_offset(0);
-  md_.cam2body_(1,3) = camera_offset(1);
-  md_.cam2body_(2,3) = camera_offset(2);
-  md_.cam2body_(3,3) = 1.0;
-
+  md_.cam2body_ << 0.0, 0.0, 1.0, camera_offset(0),
+                  -1.0, 0.0, 0.0, camera_offset(1),
+                  0.0, -1.0, 0.0, camera_offset(2),
+                  0.0, 0.0, 0.0, 1.0;
+  //md_.cam2body_ = Eigen::MatrixXd::Identity(4, 4);
+  // md_.cam2body_.block<3,3>(0,0) = camera_q.toRotationMatrix();
+  // md_.cam2body_(0,3) = camera_offset(0);
+  // md_.cam2body_(1,3) = camera_offset(1);
+  // md_.cam2body_(2,3) = camera_offset(2);
+  // md_.cam2body_(3,3) = 1.0;
+  cout << "cam2body matrix: " << md_.cam2body_ << endl;
 
   /* init callback */
   depth_sub_.reset(new message_filters::Subscriber<sensor_msgs::Image>(node_, "grid_map_depth", 50));
@@ -285,7 +289,7 @@ void GridMap::projectDepthImage()
   int rows = md_.depth_image_.rows;
   int skip_pix = mp_.skip_pixel_;
 
-  ROS_INFO("Img size: %d %d", rows, cols);
+  //ROS_INFO("Img size: %d %d", rows, cols);
   double depth;
 
   Eigen::Matrix3d camera_r = md_.camera_r_m_;
@@ -308,11 +312,10 @@ void GridMap::projectDepthImage()
         proj_pt(0) = (u - mp_.cx_) * depth / mp_.fx_;
         proj_pt(1) = (v - mp_.cy_) * depth / mp_.fy_;
         proj_pt(2) = depth;
-        // ROS_INFO("Projected point: %f, %f, %f", proj_pt(0), proj_pt(1), proj_pt(2));
+        //ROS_INFO("Projected point: %f, %f, %f", proj_pt(0), proj_pt(1), proj_pt(2));
         proj_pt = camera_r * proj_pt + md_.camera_pos_;
-
-        if (u == 1279 && v == 1023)
-          std::cout << "depth: " << depth << std::endl;
+        //ROS_INFO("---> Projected point: %f, %f, %f", proj_pt(0), proj_pt(1), proj_pt(2));
+        if (u == 320 && v == 240)  std::cout << "depth: " << depth << std::endl;
         md_.proj_points_[md_.proj_points_cnt++] = proj_pt;
       }
     }
@@ -368,6 +371,9 @@ void GridMap::projectDepthImage()
           // if (!isInMap(pt_world)) {
           //   pt_world = closetPointInMap(pt_world, md_.camera_pos_);
           // }
+          // ROS_INFO("---> Projected point: %f, %f, %f", pt_world(0), pt_world(1), pt_world(2));
+          // ROS_INFO("---> pt_cur point: %f, %f, %f", pt_cur(0), pt_cur(1), pt_cur(2));
+
 
           md_.proj_points_[md_.proj_points_cnt++] = pt_world;
 
@@ -405,7 +411,7 @@ void GridMap::projectDepthImage()
 
 void GridMap::raycastProcess()
 {
-  ROS_INFO("[Raycast Process]");
+  //ROS_INFO("[Raycast Process]");
   // if (md_.proj_points_.size() == 0)
   if (md_.proj_points_cnt == 0)
     return;
@@ -438,7 +444,8 @@ void GridMap::raycastProcess()
 
     if (!isInMap(pt_w))
     {
-      ROS_WARN("pt_ws outside map");
+      // ROS_WARN("pt_ws outside map");
+      // std::cout << pt_w << std::endl;
       pt_w = closetPointInMap(pt_w, md_.camera_pos_);
 
       length = (pt_w - md_.camera_pos_).norm();
@@ -864,7 +871,7 @@ void GridMap::depthPoseCallback(const sensor_msgs::ImageConstPtr &img,
 
 void GridMap::odomCallback(const nav_msgs::OdometryConstPtr &odom)
 {
-  ROS_INFO("Odom callback");
+  //ROS_INFO("Odom callback");
   if (md_.has_first_depth_)
     return;
 
@@ -1236,7 +1243,7 @@ void GridMap::extrinsicCallback(const nav_msgs::OdometryConstPtr &odom)
 void GridMap::depthOdomCallback(const sensor_msgs::ImageConstPtr &img,
                                 const nav_msgs::OdometryConstPtr &odom)
 {
-  ROS_INFO("Enter depth odom callback");
+  //ROS_INFO("Enter depth odom callback");
   /* get pose */
   Eigen::Quaterniond body_q = Eigen::Quaterniond(odom->pose.pose.orientation.w,
                                                  odom->pose.pose.orientation.x,

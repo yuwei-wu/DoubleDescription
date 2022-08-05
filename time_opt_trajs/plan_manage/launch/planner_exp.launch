@@ -9,11 +9,11 @@
 
   <arg name="map_size_x" value="60.0"/>
   <arg name="map_size_y" value="60.0"/>
-  <arg name="map_size_z" value="5.0"/>
+  <arg name="map_size_z" value="4.0"/>
 
-  <arg name="map_origin_x" value="-30.0"/>
+  <!-- <arg name="map_origin_x" value="-30.0"/>
   <arg name="map_origin_y" value="-30.0"/>
-  <arg name="map_origin_z" value="0.05"/>
+  <arg name="map_origin_z" value="-0.1"/> -->
 
   <arg name="color/r" value="0.0"/>
   <arg name="color/g" value="0.0"/>
@@ -38,9 +38,9 @@
     <arg name="map_size_y_" value="$(arg map_size_y)"/>
     <arg name="map_size_z_" value="$(arg map_size_z)"/>
 
-    <arg name="map_origin_x" value="$(arg map_origin_x)"/>
+    <!-- <arg name="map_origin_x" value="$(arg map_origin_x)"/>
     <arg name="map_origin_y" value="$(arg map_origin_y)"/>
-    <arg name="map_origin_z" value="$(arg map_origin_z)"/>
+    <arg name="map_origin_z" value="$(arg map_origin_z)"/> -->
 
     <arg name="ego_radius"  value="$(arg ego_radius)"/>
     <arg name="ego_height"  value="$(arg ego_height)"/>
@@ -74,9 +74,9 @@
     <arg name="fy" value="381.5846862792969"/>
 
     <!-- extrinsic params of the depth camera-->
-    <arg name="off_x" value="0.09"/>
-    <arg name="off_y" value="0.01"/>
-    <arg name="off_z" value="-0.0427"/>
+    <arg name="off_x" value="0.00"/>
+    <arg name="off_y" value="0.00"/>
+    <arg name="off_z" value="0.086"/>
 
     <arg name="qx" value="0.5"/>
     <arg name="qy" value="-0.5"/>

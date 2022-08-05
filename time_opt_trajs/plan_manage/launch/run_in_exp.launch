@@ -1,16 +1,16 @@
 <launch>
-  <arg name="mav_name" default="kingfisher"/>
+  <arg name="mav_name" default="f250_ariel"/>
   <arg name="mav_id" default="1"/>
   <arg name="mav_type" default="hummingbird"/>
-  <arg name="world_frame_id" default="world"/>
+  <arg name="world_frame_id" default="map"/>
   <arg name="sim" default="1"/>
   <arg name="vicon" default="1"/>
   <arg name="vicon_fps" default="100"/>
   <arg name="slow_baud_rate" default="true"/>
-  <arg name="mass" default="0.752"/>
+  <arg name="mass" default="1.37"/>
   <arg name="nodelet_manager_name" default="nodelet_manager_control"/>
 
-  <arg name="odom_topic" default="/$(arg mav_name)/odom"/>
+  <arg name="odom_topic" default="/vins_fusion/imu_propagate"/>
 
 
   <!-- size of map, change the size in x, y, z according to your application -->
@@ -27,14 +27,13 @@
 
   <group ns="$(arg mav_name)">
 
-    <include file="$(find plan_manage)/launch/local_planner.launch">
+    <include file="$(find plan_manage)/launch/planner_exp.launch">
       <arg name="mav_name" value="$(arg mav_name)"/>
       <arg name="world_frame_id" value="$(arg world_frame_id)"/>
       <arg name="mav_id" value="$(arg mav_id)"/>
-      <arg name="odom_topic" value="$(arg odom_topic)"/>
+      <arg name="vins_odom" value="$(arg odom_topic)"/>
     </include>
 
-  
   </group>
 
 
