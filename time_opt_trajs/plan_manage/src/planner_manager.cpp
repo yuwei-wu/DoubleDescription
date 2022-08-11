@@ -183,13 +183,13 @@ namespace opt_planner
 
     int status = kino_path_finder_->search(startState, endState, plan_time, false);
 
-    if (status == KinodynamicAstar::NO_PATH)
+    if (status == KINO_SEARCH_RESULT::NO_PATH)
     {
       std::cout << "[kino replan]: kinodynamic search fail!" << std::endl;
       // retry searching with discontinuous initial state
       kino_path_finder_->reset();
       status = kino_path_finder_->search(startState, endState, plan_time, false);
-      if (status == KinodynamicAstar::NO_PATH)
+      if (status == KINO_SEARCH_RESULT::NO_PATH)
       {
         std::cout << "[kino replan]: Can't find path." << std::endl;
         return false;
