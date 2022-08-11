@@ -1,5 +1,5 @@
 <launch>
-  <arg name="mav_name" default="f250_ariel"/>
+  <arg name="mav_name" default="quadrotor"/>
   <arg name="mav_id" default="1"/>
   <arg name="mav_type" default="hummingbird"/>
   <arg name="world_frame_id" default="map"/>
@@ -20,12 +20,6 @@
   <arg name="color/g" default="0.0"/>
   <arg name="color/b" default="1.0"/>
   <arg name="color/a" default="0.7"/>
-
-
-  <!-- size of map, change the size in x, y, z according to your application -->
-  <arg name="map_size_x" value="40.0"/>
-  <arg name="map_size_y" value="40.0"/>
-  <arg name="map_size_z" value=" 5.0"/>
 
   <!-- Control stuff -->
   <include file="$(find kr_mav_launch)/launch/example_control.launch">
@@ -75,6 +69,8 @@
     </include>
   </group>
 
-
+  <include file="$(find plan_manage)/launch/rviz.launch">
+    <arg name="rviz_config" value="$(find plan_manage)/rviz/config_sim.rviz"/>
+  </include>
 
 </launch>

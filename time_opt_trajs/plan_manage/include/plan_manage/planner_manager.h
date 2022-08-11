@@ -17,7 +17,8 @@
 
 #include <plan_manage/poly_opt.h>
 #include <traj_utils/planning_visualization.h>
-#include <path_searching/kinodynamic_astar.h>
+#include <path_searching/kino_acc_astar.h>
+#include <path_searching/kino_jerk_astar.h>
 
 namespace opt_planner
 {
@@ -56,12 +57,16 @@ namespace opt_planner
     Eigen::Vector4d display_color_;
 
     //@yuwei local multi-agent clearance primitives
-    std::unique_ptr<KinodynamicAstar> kino_path_finder_;
+    std::unique_ptr<KinoJerkAstar> kinojerk_path_finder_;
+    std::unique_ptr<KinoAccAstar> kinoacc_path_finder_;
+
     double time_res_ = 0.2;
+    template <typename T>
     bool kinoPlan(Eigen::MatrixXd &startState,
                   Eigen::MatrixXd &endState,
                   ros::Time plan_time,
-                  std::vector<Eigen::Vector3d> &kino_path);
+                  std::vector<Eigen::Vector3d> &kino_path,
+                  T &finder);
 
 
     bool getSikangConst(std::vector<Eigen::Vector3d> &path_pts,
@@ -84,9 +89,9 @@ namespace opt_planner
     // optimization
     PolySolver poly_traj_solver_;
 
-    bool localPlanner(Eigen::MatrixXd &startState, 
-                      Eigen::Vector3d &yawStartState);
+    bool localPlanner(Eigen::MatrixXd &startState);
     bool have_opt_path_ = false;
+    bool use_jerk_ = false;
 
     double bb_back_ = 0.5;
 

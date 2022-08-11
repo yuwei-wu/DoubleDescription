@@ -240,7 +240,7 @@ namespace opt_planner
       startYawState  << odom_yaw_, 0.0, 0.0;
 
       std::cout << "startState  "  << startState << std::endl;
-      if (planner_manager_->localPlanner(startState, startYawState))
+      if (planner_manager_->localPlanner(startState))
       {
         publishTraj();
         changeFSMExecState(EXEC_TRAJ, "FSM");
@@ -275,7 +275,7 @@ namespace opt_planner
       //startYawState  << info->traj_.getYaw(t_cur), info->traj_.getdYaw(t_cur);
       startYawState  << odom_yaw_, 0.0, 0.0;
 
-      if (planner_manager_->localPlanner(startState, startYawState))
+      if (planner_manager_->localPlanner(startState))
       {
         publishTraj();
         changeFSMExecState(EXEC_TRAJ, "FSM");

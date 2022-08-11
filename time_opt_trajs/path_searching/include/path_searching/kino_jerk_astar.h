@@ -1,21 +1,12 @@
 #ifndef _KINO_JERK_ASTAR_H
 #define _KINO_JERK_ASTAR_H
 
-#include <Eigen/Eigen>
 #include <iostream>
-#include <map>
 #include <ros/console.h>
 #include <ros/ros.h>
-#include <string>
-#include <unordered_map>
-#include <boost/functional/hash.hpp>
-#include <queue>
 #include <math.h>
 #include "local_mapping/grid_map.h"
-#include <utility>
-#include <traj_utils/plan_container.hpp>
-#include <traj_utils/root_finder.hpp>
-#include <traj_utils/traj_min_jerk.hpp>
+#include <traj_utils/math.h>
 #include <path_searching/kino_utils.hpp>
 
 
@@ -37,20 +28,12 @@ private:
   bool is_shot_succ_ = false;
   bool has_path_ = false;
   Eigen::MatrixXd coef_shot_;
+  vector<Eigen::Vector3d> jerk_inputs_;
   double t_shot_;
+  KinoSearchParameters ksp_;
 
   /* map */
   GridMap::Ptr grid_map_;
-  double time_origin_;
-  Eigen::Vector3d origin_;
-
-  /* helper */ 
-  Eigen::Vector3i posToIndex(Eigen::Vector3d pt);
-  int timeToIndex(double time);
-
-  template <typename T>
-  void retrievePath(T end_node, std::vector<T> &nodes);
-
   /* shot trajectory */
   bool computeShotTraj(Eigen::VectorXd state1, Eigen::VectorXd state2, double time_to_goal);
   double estimateHeuristic(Eigen::VectorXd x1, Eigen::VectorXd x2, double& optimal_time);
@@ -72,7 +55,7 @@ public:
   int search(Eigen::MatrixXd startState, 
              Eigen::MatrixXd endState, 
              ros::Time time_start, 
-             bool init, bool dynamic = false);
+             bool init);
 
   typedef shared_ptr<KinoJerkAstar> Ptr;
   

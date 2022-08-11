@@ -1,7 +1,4 @@
-#include <path_searching/kinodynamic_astar.h>
-#include <sstream>
-#include <traj_utils/math.h>
-
+#include <path_searching/kino_acc_astar.h>
 
 
 namespace opt_planner
@@ -11,47 +8,100 @@ namespace opt_planner
 
   KinoAccAstar::~KinoAccAstar()
   {
-    for (int i = 0; i < allocate_num_; i++)
+    for (int i = 0; i < ksp_.allocate_num_; i++)
     {
       delete path_node_pool_[i];
     }
   }
 
-  int KinoAccAstar::search(Eigen::MatrixXd startState, // 3 * 3
-                               Eigen::MatrixXd endState,  // 3 * 3
-                               ros::Time time_start,
-                               bool init, bool dynamic)
+  // set params
+  void KinoAccAstar::setParam(ros::NodeHandle &nh)
+  {
+    nh.param("search/max_tau", ksp_.max_tau_, -1.0);
+    nh.param("search/init_max_tau", ksp_.init_max_tau_, -1.0);
+    nh.param("search/horizon", ksp_.horizon_, -1.0);
+    nh.param("search/resolution_astar", ksp_.resolution_, -1.0);
+    nh.param("search/time_resolution", ksp_.time_resolution_, -1.0);
+    nh.param("search/lambda_heu", ksp_.lambda_heu_, -1.0);
+    nh.param("search/allocate_num", ksp_.allocate_num_, -1);
+    nh.param("search/vis_check_num", ksp_.vis_check_num_, -1);
+    nh.param("search/w_time", ksp_.w_time_, -1.0);
+
+    nh.param("max_vel",  ksp_.max_vel_, -1.0);
+    nh.param("max_acc",  ksp_.max_acc_, -1.0);
+    nh.param("max_jerk", ksp_.max_jerk_, -1.0);
+
+  }
+
+  void KinoAccAstar::intialMap(GridMap::Ptr &grid_map)
+  {
+    grid_map_ = grid_map;
+    ROS_INFO_STREAM("Finish the intialization of the kinodynamic front-end. ");
+  }
+
+
+  void KinoAccAstar::init(int ego_id, double ego_radius)
+  {
+    /* ---------- pre-allocated node ---------- */
+    path_node_pool_.resize(ksp_.allocate_num_);
+    for (int i = 0; i < ksp_.allocate_num_; i++)
+    {
+      path_node_pool_[i] = new AccNode;
+    }
+
+    phi_ = Eigen::MatrixXd::Identity(6, 6);
+    use_node_num_ = 0;
+    iter_num_ = 0;
+
+    // set up the inputs
+    Eigen::Vector3d um;
+    double res = ksp_.max_acc_ * 0.5;
+    acc_inputs_.clear();
+    for (double ax = -ksp_.max_acc_; ax <= ksp_.max_acc_ + 1e-3; ax += res)
+      for (double ay = -ksp_.max_acc_; ay <= ksp_.max_acc_ + 1e-3; ay += res)
+        for (double az = -ksp_.max_acc_; az <= ksp_.max_acc_ + 1e-3; az += res)
+        {
+          um << ax, ay, az;
+          acc_inputs_.push_back(um);
+        }
+    
+  }
+
+  int KinoAccAstar::search(Eigen::MatrixXd startState, // 3 * 2
+                           Eigen::MatrixXd endState,  // 3 * 2
+                           ros::Time time_start,
+                           bool init)
   {
     start_pt_ = startState.col(0);
     start_vel_ = startState.col(1);
-    start_acc_ = startState.col(2);
     end_pt_ = endState.col(0);
     end_vel_ = endState.col(1);
-    end_acc_ = endState.col(2);
     
     /* ---------- initialize ---------- */
     AccNodePtr cur_node = path_node_pool_[0];
     cur_node->parent = NULL;
     cur_node->state.head(3) = start_pt_;
-    cur_node->state.segment(3, 3) = start_vel_;
-    cur_node->state.tail(3) = start_acc_;
+    cur_node->state.tail(3) = start_vel_;
     cur_node->time = time_start.toSec(); // primitive start time
-    
-    /* ---- initialize yaw angles ---- */
-    cur_node->index = posToIndex(start_pt_);
     cur_node->g_score = 0.0;
 
-    Eigen::VectorXd final_state(9);
-    Eigen::Vector3i end_index;
+
+    Eigen::Vector3i start_index, end_index;
+
+    grid_map_->posToIndex(start_pt_, start_index);
+    cur_node->index = start_index;
+
+    grid_map_->posToIndex(end_pt_, end_index);
+
+
+    Eigen::VectorXd final_state(6);
     double time_to_goal;
 
     final_state.head(3) = end_pt_;
-    final_state.segment(3, 3) = end_vel_;
-    final_state.tail(3) = end_acc_;
+    final_state.tail(3) = end_vel_;
 
   
-    end_index = posToIndex(end_pt_);
-    cur_node->f_score = lambda_heu_ * estimateHeuristic(cur_node->state, final_state, time_to_goal);
+    cur_node->f_score = ksp_.lambda_heu_ * estimateHeuristic(cur_node->state, final_state, time_to_goal);
     cur_node->node_state = IN_OPEN_SET;
 
     open_set_.push(cur_node);
@@ -59,40 +109,27 @@ namespace opt_planner
 
     expanded_nodes_.insert(cur_node->index, cur_node);
 
-    //AccNodePtr neighbor = NULL;
     AccNodePtr terminate_node = NULL;
     bool init_search = init;
-    const int tolerance = ceil(1 / resolution_);
+    const int tolerance = ceil(1 / ksp_.resolution_);
     iter_num_ = 0;
 
-
     /* ---------- init state propagation ---------- */
-    double res = 1 / 2.0, time_res = 1 / 1.0, time_res_init = 1 / 8.0;
+    double time_res = 1 / 1.0, time_res_init = 1 / 8.0;
     vector<Eigen::Vector3d> inputs;
-    vector<double> durations, yaw_inputs;
-    Eigen::Vector3d um;
-    double u_yaw;
-
+    vector<double> durations;
 
     if (init_search)
     {
       inputs.push_back(start_acc_);
-      for (double tau = time_res_init * init_max_tau_; tau <= init_max_tau_;
-            tau += time_res_init * init_max_tau_)
+      for (double tau = time_res_init * ksp_.init_max_tau_; tau <= ksp_.init_max_tau_;
+            tau += time_res_init * ksp_.init_max_tau_)
         durations.push_back(tau);
     }
     else
     {
-      for (double jx = -max_jerk_; jx <= max_jerk_ + 1e-3; jx += max_jerk_ * res)
-        for (double jy = -max_jerk_; jy <= max_jerk_ + 1e-3; jy += max_jerk_ * res)
-          for (double jz = -max_jerk_; jz <= max_jerk_ + 1e-3; jz += max_jerk_ * res)
-          {
-            um << jx, jy, jz;
-            if (um.norm() <= max_jerk_ + 1e-3){
-              inputs.push_back(um);
-            }
-          }
-      for (double tau = time_res * max_tau_; tau <= max_tau_; tau += time_res * max_tau_)
+      inputs = acc_inputs_;
+      for (double tau = time_res * ksp_.max_tau_; tau <= ksp_.max_tau_; tau += time_res * ksp_.max_tau_)
         durations.push_back(tau);
     }
 
@@ -108,7 +145,7 @@ namespace opt_planner
                       abs(cur_node->index(2) - end_index(2)) <= tolerance;
       // to decide the near end
 
-      bool reach_horizon = (cur_node->state.head(3) - start_pt_).norm() >= horizon_;
+      bool reach_horizon = (cur_node->state.head(3) - start_pt_).norm() >= ksp_.horizon_;
 
       if (reach_horizon || near_end)
       {
@@ -154,22 +191,18 @@ namespace opt_planner
       cur_node->node_state = IN_CLOSE_SET;
       iter_num_ += 1;
 
-
-      Eigen::Matrix<double, 9, 1> cur_state = cur_node->state, pro_state;
-      //Eigen::Vector2d cur_yaw = cur_node->yaw_state, pro_yaw;
-
+      Eigen::Matrix<double, 6, 1> cur_state = cur_node->state, pro_state;
       vector<AccNodePtr> tmp_expand_nodes;
-
       double pro_start_time;
-      //std::cout << " cur_state " << cur_state << std::endl;
-    
+      Eigen::Vector3d um;
+
       /* ---------- state propagation loop ---------- */
       for (unsigned int j = 0; j < durations.size(); ++j)
       {
         double tau = durations[j];
         pro_start_time = cur_node->time + tau;
 
-        double vis_res = tau / double(vis_check_num_);
+        double vis_res = tau / double(ksp_.vis_check_num_);
 
 
         for (unsigned int i = 0; i < inputs.size(); ++i)
@@ -192,8 +225,8 @@ namespace opt_planner
           }
 
           /* not in close set */
-          Eigen::Vector3i pro_id = posToIndex(pro_pos);
-          int pro_start_time_id = timeToIndex(pro_start_time);
+          Eigen::Vector3i pro_id;
+          grid_map_->posToIndex(pro_pos, pro_id);
           AccNodePtr pro_node = expanded_nodes_.find(pro_id);
 
           if (pro_node != NULL && pro_node->node_state == IN_CLOSE_SET)
@@ -203,60 +236,28 @@ namespace opt_planner
           
           /* not in the same voxel */
           Eigen::Vector3i diff = pro_id - cur_node->index;
-          int diff_time = pro_start_time_id - cur_node->time_idx;
-          if (diff.norm() == 0 && ((!dynamic) || diff_time == 0) )
+          if (diff.norm() == 0)
           {
             continue;
           }
 
-
-          /* acc feasibe */
-          Eigen::Vector3d pro_acc = pro_state.tail(3);
-          if (pro_acc.norm() > max_acc_ + 1e-2)
+          /* Check maximal velocity */
+          Eigen::Vector3d pro_v = pro_state.tail(3);
+          if (fabs(pro_v(0)) > ksp_.max_vel_ || fabs(pro_v(1)) > ksp_.max_vel_ || fabs(pro_v(2)) > ksp_.max_vel_)
           {
-            //cout << "acc infeasible, the acc is " << pro_acc << endl;
-            continue;
-          }
-
-          /* vel feasibe   v = 0.5 * j * t^2 + a t + v0  and v0 is feasible*/
-          // 0.5 * j * t^2 + a t + v0  = v_max 
-          // t =  
-          Eigen::Vector3d pro_vel = pro_state.segment(3, 3);
-          if (pro_vel.norm() > max_vel_ + 1e-2){
-            ///cout << "vel infeasible, pro vel is" << pro_vel << endl;
-            continue;
-          }
-          //TrajDim, TrajOrder  normalized posCoeff = [c3*T^3,c2*T^2,c1*T,c0*1]
-          Eigen::MatrixXd velCoeff(3, 3);
-          velCoeff.col(0) = 0.5 * um;
-          velCoeff.col(1) = pro_acc;
-          velCoeff.col(2) = pro_vel;
-
-          Eigen::VectorXd coeff = RootFinder::polySqr(velCoeff.row(0)) +
-                                  RootFinder::polySqr(velCoeff.row(1)) +
-                                  RootFinder::polySqr(velCoeff.row(2));
-          
-          coeff.tail<1>()(0) -= (max_vel_+ 1e-2) * (max_vel_+ 1e-2);
-          // Directly check the root existence in the normalized interval
-          if ( RootFinder::countRoots(coeff, 0.0, tau) > 0 ){
-            //cout << "vel infeasible" << endl;
+            if (init_search)
+              std::cout << "vel is" << pro_v << std::endl;
             continue;
           }
           
           /* collision free */
-          Eigen::Matrix<double, 9, 1> xt;
-          std::vector<Eigen::Matrix<double, 6, 1>> sampled_states;
-
-
+          Eigen::Matrix<double, 6, 1> xt;
           bool is_occ = false;
 
-
-          for (int k = 1; k <= vis_check_num_; ++k)
+          for (int k = 1; k <= ksp_.vis_check_num_; ++k)
           {
             double dt = vis_res * double(k);
             stateTransit(cur_state, xt, um, dt);
-
-            sampled_states.push_back(xt.head(6));
             
             if (grid_map_->getInflateOccupancy(xt.head(3)))
             {
@@ -265,25 +266,26 @@ namespace opt_planner
               break;
             }
           }
-
           if (is_occ)
+          {
+            if (init_search)
+              std::cout << "safe" << std::endl;
             continue;
-
+          }
           
           /* ---------- compute cost ---------- */
           double time_to_goal, tmp_g_score, tmp_f_score;
 
           
-          tmp_g_score = (um.squaredNorm() + w_time_ ) * tau  + cur_node->g_score;
-          tmp_f_score = tmp_g_score + lambda_heu_ * estimateHeuristic(pro_state, final_state, time_to_goal);
+          tmp_g_score = (um.squaredNorm() + ksp_.w_time_ ) * tau  + cur_node->g_score;
+          tmp_f_score = tmp_g_score + ksp_.lambda_heu_ * estimateHeuristic(pro_state, final_state, time_to_goal);
 
           /* ---------- compare expanded node in this loop ---------- */
           bool prune = false;
           for (unsigned int j = 0; j < tmp_expand_nodes.size(); ++j)
           {
             AccNodePtr expand_node = tmp_expand_nodes[j];
-            if ((pro_id - expand_node->index).norm() == 0 &&
-                ((!dynamic) || pro_start_time_id == expand_node->time_idx))
+            if ((pro_id - expand_node->index).norm() == 0)
             {
               prune = true;
               if (tmp_f_score < expand_node->f_score)
@@ -320,7 +322,7 @@ namespace opt_planner
               tmp_expand_nodes.push_back(pro_node);
 
               use_node_num_ += 1;
-              if (use_node_num_ == allocate_num_)
+              if (use_node_num_ == ksp_.allocate_num_)
               {
                 cout << "run out of memory." << endl;
                 
@@ -356,45 +358,6 @@ namespace opt_planner
     return NO_PATH;
   }
 
-  // set params
-  void KinoAccAstar::setParam(ros::NodeHandle &nh)
-  {
-    nh.param("search/max_tau", max_tau_, -1.0);
-    nh.param("search/init_max_tau", init_max_tau_, -1.0);
-    nh.param("search/horizon", horizon_, -1.0);
-
-    nh.param("search/resolution_astar", resolution_, -1.0);
-    nh.param("search/time_resolution", time_resolution_, -1.0);
-
-    nh.param("search/lambda_heu", lambda_heu_, -1.0);
-    nh.param("search/allocate_num", allocate_num_, -1);
-    nh.param("search/vis_check_num", vis_check_num_, -1);
-
-    nh.param("search/w_time", w_time_, -1.0);
-
-    nh.param("max_vel", max_vel_, -1.0);
-    nh.param("max_acc", max_acc_, -1.0);
-    nh.param("max_jerk", max_jerk_, -1.0);
-
-  }
-
-
-  template <typename T>
-  void KinoAccAstar::retrievePath(T end_node,
-                                      std::vector<T> &nodes)
-  {
-    T cur_node = end_node;
-    nodes.clear();
-    nodes.push_back(cur_node);
-
-    while (cur_node->parent != NULL)
-    {
-      cur_node = cur_node->parent;
-      nodes.push_back(cur_node);
-    }
-
-    reverse(nodes.begin(), nodes.end());
-  }
 
   // need to revise
   double KinoAccAstar::estimateHeuristic(Eigen::VectorXd x1, Eigen::VectorXd x2,
@@ -403,18 +366,16 @@ namespace opt_planner
     const Vector3d dp = x2.head(3) - x1.head(3);
     const Vector3d v0 = x1.segment(3, 3);
     const Vector3d v1 = x2.segment(3, 3);
-    const Vector3d a0 = x1.tail(3);
-    const Vector3d a1 = x2.tail(3);
 
-    double c1 = -720* dp.dot(dp);
-    double c2 =  720 * (v0 + v1).dot(dp);
-    double c3 = -192 * (v0.dot(v0) + v1.dot(v1)) + 336 * v0.dot(v1)  + 120 * (a0 - a1).dot(dp);
-    double c4 = -48 * a0.dot(v1) + 48 * a1.dot(v0) - 72 * a0.dot(v0) + 72 * a1.dot(v1);
-    double c5 =  6 * a0.dot(a1) - 9 * a1.dot(a1) - 9 * a0.dot(a0);
+    double c1 = -36 * dp.dot(dp);
+    double c2 = 24 * (v0 + v1).dot(dp);
+    double c3 = -4 * (v0.dot(v0) + v0.dot(v1) + v1.dot(v1));
+    double c4 = 0;
+    double c5 = ksp_.w_time_;
 
-    std::vector<double> ts = solve(w_time_, 0.0, 0.0, c5, c4, c3, c2, c1);
+    std::vector<double> ts = quartic(c5, c4, c3, c2, c1);
 
-    double v_max = max_vel_;
+    double v_max = ksp_.max_vel_ * 0.5;
     double t_bar = (x1.head(3) - x2.head(3)).lpNorm<Infinity>() / v_max;
     ts.push_back(t_bar);
 
@@ -425,79 +386,56 @@ namespace opt_planner
     {
       if (t < t_bar)
         continue;
-
-      double t_2 = t * t;
-      double t_3 = t_2 * t;
-      double t_4 = t_3 * t;
-
-      double c = -c1 / (6 * t_3 * t_3) - c2 / (5 * t_3 * t_2) - c3 / (4 * t_4) - c4 / (3 * t_3) - c5 / (2 * t_2) + w_time_ * t;
+      double c = -c1 / (3 * t * t * t) - c2 / (2 * t * t) - c3 / t + ksp_.w_time_ * t;
       if (c < cost)
       {
         cost = c;
         t_d = t;
       }
     }
+
     optimal_time = t_d;
-    return 1.0 * (1.0 + 1.0 + 1.0 / 10000) * cost;
+
+    return 1.0 * (2.0 + 1.0 / 10000) * cost;
   }
 
   // need to revise
-  bool KinoAccAstar::computeShotTraj(Eigen::VectorXd state1, Eigen::VectorXd state2,
-                                         double time_to_goal)
+  bool KinoAccAstar::computeShotTraj(Eigen::VectorXd state1, 
+                                     Eigen::VectorXd state2,
+                                     double time_to_goal)
   {
     /* ---------- get coefficient ---------- */
     const Vector3d p0 = state1.head(3);
     const Vector3d dp = state2.head(3) - p0;
     const Vector3d v0 = state1.segment(3, 3);
-    const Vector3d dv = state2.segment(3, 3) - v0;
-    const Vector3d a0 = state1.tail(3);
-
-    // order = 5;
+    const Vector3d v1 = state2.segment(3, 3);
+    const Vector3d dv = v1 - v0;
     double t_d = time_to_goal;
-    MatrixXd coef(3, 6);
+    MatrixXd coef(3, 4);
+    end_vel_ = v1;
 
-    double t_d_2 = t_d * t_d;
-    double t_d_3 = t_d_2 * t_d;
-    double t_d_4 = t_d_3 * t_d;
+    Vector3d a = 1.0 / 6.0 * (-12.0 / (t_d * t_d * t_d) * (dp - v0 * t_d) + 6 / (t_d * t_d) * dv);
+    Vector3d b = 0.5 * (6.0 / (t_d * t_d) * (dp - v0 * t_d) - 2 / t_d * dv);
+    Vector3d c = v0;
+    Vector3d d = p0;
 
-    const Vector3d delta_p = dp - v0 * t_d - 0.5 * a0 * t_d_2;
-    const Vector3d delta_v = dv - a0 * t_d;
-    const Vector3d delta_a = state2.tail(3) - a0;
+    // 1/6 * alpha * t^3 + 1/2 * beta * t^2 + v0
+    // a*t^3 + b*t^2 + v0*t + p0
+    coef.col(3) = a, coef.col(2) = b, coef.col(1) = c, coef.col(0) = d;
 
-    Vector3d a = 1.0 / 120.0 * (720.0 / (t_d_4 * t_d) * delta_p - 360.0 / t_d_4 * delta_v + 60.0 / t_d_3 * delta_a);
-    Vector3d b = 1.0 / 24.0 * (-360.0 / t_d_4 * delta_p + 168.0 / t_d_3 * delta_v - 24.0 / t_d_2 * delta_a);
-    Vector3d c = 1.0 / 6.0 * (60.0 / t_d_3 * delta_p - 24.0 / t_d_2 * delta_v + 3.0 / t_d * delta_a);
-    Vector3d d = 0.5 * a0;
-    Vector3d e = v0;
-    Vector3d f = p0;
-
-    // 1/24 *  * t^4  +  1/6 * alpha * t^3 + 1/2 * beta * t^2 + v0
-    // a*t^4 + b*t^3 + c*t^2 + v0*t + p0
-    coef.col(5) = a;
-    coef.col(4) = b;
-    coef.col(3) = c;
-    coef.col(2) = d;
-    coef.col(1) = e;
-    coef.col(0) = f;
-
-    Vector3d coord, vel, acc, jerk;
+    Vector3d coord, vel, acc;
     VectorXd poly1d, t, polyv, polya;
     Vector3i index;
 
-    Eigen::MatrixXd Tm(6, 6);
-    Tm << 0, 1, 0, 0, 0, 0,
-        0, 0, 2, 0, 0, 0,
-        0, 0, 0, 3, 0, 0,
-        0, 0, 0, 0, 4, 0,
-        0, 0, 0, 0, 0, 5,
-        0, 0, 0, 0, 0, 0;
+    Eigen::MatrixXd Tm(4, 4);
+    Tm << 0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 3, 0, 0, 0, 0;
 
     /* ---------- forward checking of trajectory ---------- */
     double t_delta = t_d / 10;
     for (double time = t_delta; time <= t_d; time += t_delta)
     {
-      t = VectorXd::Zero(6);
-      for (int j = 0; j < 6; j++)
+      t = VectorXd::Zero(4);
+      for (int j = 0; j < 4; j++)
         t(j) = pow(time, j);
 
       for (int dim = 0; dim < 3; dim++)
@@ -506,26 +444,12 @@ namespace opt_planner
         coord(dim) = poly1d.dot(t);
         vel(dim) = (Tm * poly1d).dot(t);
         acc(dim) = (Tm * Tm * poly1d).dot(t);
-        jerk(dim) = (Tm * Tm * Tm * poly1d).dot(t);
 
-        if (fabs(jerk(dim)) > max_jerk_)
+        if (fabs(vel(dim)) > ksp_.max_vel_ || fabs(acc(dim)) > ksp_.max_acc_)
         {
-          //cout << "vel:" << vel(dim) << ", acc:" << acc(dim) << endl;
-          return false;
+          // cout << "vel:" << vel(dim) << ", acc:" << acc(dim) << endl;
+          // return false;
         }
-      }
-
-      /* satisfy the feasibility */
-      if (vel.norm() > max_vel_ || acc.norm() > max_acc_)
-      {
-        cout << "vel:" << vel << ", acc:" << acc << endl;
-        return false;
-      }
-
-      /* within the map */
-      if (!grid_map_->isInMap(coord))
-      {
-        return false;
       }
 
       if (grid_map_->getInflateOccupancy(coord))
@@ -539,41 +463,12 @@ namespace opt_planner
     return true;
   }
 
-  void KinoAccAstar::intialMap(GridMap::Ptr &grid_map)
-  {
-
-    grid_map_ = grid_map;
-
-    /* ---------- map params ---------- */
-    origin_ = grid_map_->getOrigin();
-
-    ROS_INFO_STREAM("origin_ : " << origin_);
-    ROS_INFO_STREAM("Finish the intialization of the kinodynamic front-end. ");
-  }
-
-
-  void KinoAccAstar::init(int ego_id, double ego_radius)
-  {
-    /* ---------- pre-allocated node ---------- */
-    path_node_pool_.resize(allocate_num_);
-    for (int i = 0; i < allocate_num_; i++)
-    {
-      path_node_pool_[i] = new AccNode;
-    }
-
-
-    phi_ = Eigen::MatrixXd::Identity(9, 9);
-    use_node_num_ = 0;
-
-    iter_num_ = 0;
-  }
-
   void KinoAccAstar::reset()
   {
     expanded_nodes_.clear();
     path_nodes_.clear();
 
-    std::priority_queue<AccNodePtr, std::vector<AccNodePtr>, NodeComparator0<AccNodePtr>> empty_queue;
+    std::priority_queue<AccNodePtr, std::vector<AccNodePtr>, NodeComparator<AccNodePtr>> empty_queue;
     open_set_.swap(empty_queue);
 
     for (int i = 0; i < use_node_num_; i++)
@@ -591,14 +486,14 @@ namespace opt_planner
 
   // call after the trajectory is successfully generated
   void KinoAccAstar::getKinoTraj(double delta_t,
-                                    std::vector<Eigen::Vector3d> &path_list)
+                                std::vector<Eigen::Vector3d> &path_list)
   {
     path_list.clear();
     //yaw_list.clear();
 
     /* ---------- get traj of searching ---------- */
     AccNodePtr node = path_nodes_.back();
-    Matrix<double, 9, 1> x0, xt;
+    Matrix<double, 6, 1> x0, xt;
 
     while (node->parent != NULL)
     {
@@ -623,11 +518,11 @@ namespace opt_planner
     if (is_shot_succ_)
     {
       Vector3d coord;
-      VectorXd poly1d, time(6);
+      VectorXd poly1d, time(4);
 
       for (double t = delta_t; t <= t_shot_; t += delta_t)
       {
-        for (int j = 0; j < 6; j++)
+        for (int j = 0; j < 4; j++)
           time(j) = pow(t, j);
 
         for (int dim = 0; dim < 3; dim++)
@@ -647,33 +542,17 @@ namespace opt_planner
     return;
   }
 
-
-  Eigen::Vector3i KinoAccAstar::posToIndex(Eigen::Vector3d pt)
+  void KinoAccAstar::stateTransit(Eigen::Matrix<double, 6, 1> &state0,
+                                  Eigen::Matrix<double, 6, 1> &state1, 
+                                  Eigen::Vector3d um,
+                                  double tau)
   {
-    Vector3i idx = ((pt - origin_) / resolution_).array().floor().cast<int>();
-
-    return idx;
-  }
-
-  int KinoAccAstar::timeToIndex(double time)
-  {
-    int idx = floor((time - time_origin_) / time_resolution_);
-    return idx;
-  }
-
-  void KinoAccAstar::stateTransit(Eigen::Matrix<double, 9, 1> &state0,
-                                      Eigen::Matrix<double, 9, 1> &state1, Eigen::Vector3d um,
-                                      double tau)
-  {
-    for (int i = 0; i < 6; ++i)
+    for (int i = 0; i < 3; ++i)
       phi_(i, i + 3) = tau;
 
-    Eigen::Matrix<double, 9, 1> integral;
-
-    integral.head(3) = 1.0 / 6.0 * pow(tau, 3) * um;
-    integral.segment(3, 3) = 0.5 * pow(tau, 2) * um;
+    Eigen::Matrix<double, 6, 1> integral;
+    integral.head(3) = 0.5 * pow(tau, 2) * um;
     integral.tail(3) = tau * um;
-
 
     state1 = phi_ * state0 + integral;
   }

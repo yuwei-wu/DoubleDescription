@@ -36,12 +36,13 @@ namespace opt_planner
     nh.param("optimization/bb_back", bb_back_, 0.5);
     
     Eigen::VectorXd w_total(4), b_total(2);
-
     nh.param("optimization/w_time", w_total(0), 32.0);
     nh.param("optimization/w_vel", w_total(1), 128.0);
     nh.param("optimization/w_acc", w_total(2), 128.0);
     nh.param("optimization/w_sta_obs", w_total(3), 128.0);
     nh.param("search/horizon", local_plan_horizon_, 7.5);
+    nh.param("search/use_jerk", use_jerk_, false);
+
 
     b_total << pp_.max_vel_, pp_.max_acc_;
 
@@ -61,10 +62,18 @@ namespace opt_planner
 
 
     /*  local planner intial  */
-    kino_path_finder_.reset(new KinodynamicAstar);
-    kino_path_finder_->setParam(nh);
-    kino_path_finder_->init(pp_.mav_id_, pp_.mav_radius_);
-    kino_path_finder_->intialMap(grid_map_);
+    if(use_jerk_)
+    {
+      kinojerk_path_finder_.reset(new KinoJerkAstar);
+      kinojerk_path_finder_->setParam(nh);
+      kinojerk_path_finder_->init(pp_.mav_id_, pp_.mav_radius_);
+      kinojerk_path_finder_->intialMap(grid_map_);
+    }else{
+      kinoacc_path_finder_.reset(new KinoAccAstar);
+      kinoacc_path_finder_->setParam(nh);
+      kinoacc_path_finder_->init(pp_.mav_id_, pp_.mav_radius_);
+      kinoacc_path_finder_->intialMap(grid_map_);
+    }
 
     /*  visualization intial  */
     visualization_ = vis;
@@ -86,11 +95,10 @@ namespace opt_planner
   //*************************************local primitives*****************************************//
   //***********************************************************************************************//
   //***********************************************************************************************//
-  bool PlannerManager::localPlanner(Eigen::MatrixXd &startState, 
-                                    Eigen::Vector3d &yawStartState)
+  bool PlannerManager::localPlanner(Eigen::MatrixXd &startState)
   { // 3 * 3  [pos, vel, acc]
     // end State could be obtained from previous planned trajs
-    Eigen::MatrixXd endState(3,3), yawState(2,3); // include the start and end state
+    Eigen::MatrixXd endState(3,3); // include the start and end state
     Eigen::Vector3d local_target;
     Eigen::MatrixXd inner_pts; // (4, N -1)
     Eigen::VectorXd allo_ts;
@@ -124,10 +132,22 @@ namespace opt_planner
     ros::Time time_now = ros::Time::now();
 
     //step two: kinodynamic path searching considering obstacles avoidance
-    if (!kinoPlan(startState, endState, time_now, path_pts))
-    {
-      std::cout << "[localPlanner]: kinodynamic search fails!" << std::endl;
-      return false;
+    if (use_jerk_){
+
+      if (!kinoPlan(startState, endState, time_now, path_pts, kinojerk_path_finder_))
+      {
+        std::cout << "[localPlanner]: kinodynamic search fails!" << std::endl;
+        return false;
+      }
+
+    }else{
+
+      if (!kinoPlan(startState, endState, time_now, path_pts, kinoacc_path_finder_))
+      {
+        std::cout << "[localPlanner]: kinodynamic search fails!" << std::endl;
+        return false;
+      }
+
     }
 
    std::cout << "[localPlanner]: corridor generation..." << std::endl;
@@ -169,26 +189,26 @@ namespace opt_planner
   }
 
 
-
-
   // use kinodynamic a* to generate a path and get hpoly
+  template <typename T>
   bool PlannerManager::kinoPlan(Eigen::MatrixXd &startState,
                                 Eigen::MatrixXd &endState,
                                 ros::Time plan_time,
-                                std::vector<Eigen::Vector3d> &kino_path)
+                                std::vector<Eigen::Vector3d> &kino_path,
+                                T &finder)
   {
     
     kino_path.clear();
-    kino_path_finder_->reset();
+    finder->reset();
 
-    int status = kino_path_finder_->search(startState, endState, plan_time, false);
+    int status = finder->search(startState, endState, plan_time, false);
 
     if (status == KINO_SEARCH_RESULT::NO_PATH)
     {
       std::cout << "[kino replan]: kinodynamic search fail!" << std::endl;
       // retry searching with discontinuous initial state
-      kino_path_finder_->reset();
-      status = kino_path_finder_->search(startState, endState, plan_time, false);
+      finder->reset();
+      status = finder->search(startState, endState, plan_time, false);
       if (status == KINO_SEARCH_RESULT::NO_PATH)
       {
         std::cout << "[kino replan]: Can't find path." << std::endl;
@@ -204,7 +224,7 @@ namespace opt_planner
       std::cout << "[kino replan]: kinodynamic search success." << std::endl;
     }
 
-    kino_path_finder_->getKinoTraj(time_res_, kino_path);
+    finder->getKinoTraj(time_res_, kino_path);
     endState.col(0) = kino_path.back();
     
     visualization_->displayKinoAStarList(kino_path, display_color_, 0);

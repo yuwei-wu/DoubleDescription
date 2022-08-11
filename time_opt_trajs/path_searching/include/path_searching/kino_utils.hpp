@@ -3,15 +3,13 @@
 
 #include <Eigen/Eigen>
 #include <iostream>
+#include <sstream>
 #include <map>
-#include <ros/console.h>
-#include <ros/ros.h>
 #include <string>
+#include <math.h>
 #include <unordered_map>
 #include <boost/functional/hash.hpp>
 #include <queue>
-#include <math.h>
-#include "local_mapping/grid_map.h"
 #include <utility>
 #include <traj_utils/plan_container.hpp>
 #include <traj_utils/root_finder.hpp>
@@ -58,21 +56,37 @@ namespace opt_planner {
   };
 
 
-  double range(double angle){
-    // range the angle into (-PI, PI]
-    double psi = angle;
+  // double range(double angle){
+  //   // range the angle into (-PI, PI]
+  //   double psi = angle;
 
-    if (angle > M_PI)
+  //   if (angle > M_PI)
+  //   {
+  //     psi = 2 * M_PI - angle;
+  //   }
+  //   else if (angle <= -M_PI)
+  //   {
+  //     psi = angle + 2 * M_PI;
+  //   }
+  //   return psi;
+  // }
+
+
+  template <typename T>
+  void retrievePath(T end_node, std::vector<T> &nodes)
+  {
+    T cur_node = end_node;
+    nodes.clear();
+    nodes.push_back(cur_node);
+
+    while (cur_node->parent != NULL)
     {
-      psi = 2 * M_PI - angle;
+      cur_node = cur_node->parent;
+      nodes.push_back(cur_node);
     }
-    else if (angle <= -M_PI)
-    {
-      psi = angle + 2 * M_PI;
-    }
-    return psi;
+
+    reverse(nodes.begin(), nodes.end());
   }
-
 
   class AccNode {
   public:

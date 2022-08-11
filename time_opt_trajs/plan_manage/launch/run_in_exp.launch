@@ -37,5 +37,9 @@
   </group>
 
 
+  <!-- <include file="$(find plan_manage)/launch/rviz.launch">
+    <arg name="rviz_config" value="$(find plan_manage)/rviz/config_exp.rviz"/>
+  </include> -->
+
 
 </launch>

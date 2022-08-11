@@ -6,10 +6,9 @@
   <arg name="map_size_y_"/>
   <arg name="map_size_z_"/>
 
-  <!-- <arg name="map_origin_x"/>
+  <arg name="map_origin_x"/>
   <arg name="map_origin_y"/>
-  <arg name="map_origin_z"/> -->
-
+  <arg name="map_origin_z"/>
 
   <!-- drone information -->
   <arg name="mav_id"/>
@@ -122,9 +121,9 @@
     <param name="map_size_y" value="$(arg map_size_y_)" /> 
     <param name="map_size_z" value="$(arg map_size_z_)" /> 
 
-    <!-- <param name="map_origin_x" value="$(arg map_origin_x)"/>
+    <param name="map_origin_x" value="$(arg map_origin_x)"/>
     <param name="map_origin_y" value="$(arg map_origin_y)"/>
-    <param name="map_origin_z" value="$(arg map_origin_z)"/> -->
+    <param name="map_origin_z" value="$(arg map_origin_z)"/>
 
     <!-- used for occ map -->
     <remap from ="~grid_map_cloud" to="$(arg cloud_topic)"/>
@@ -223,6 +222,8 @@
     <param name="search/margin" value="0.2" type="double"/>
     <param name="search/allocate_num" value="100000" type="int"/>
     <param name="search/vis_check_num" value="15" type="int"/>
+    <param name="search/use_jerk" value="false" type="bool"/>
+
 
     <!-- optimization -->
     <param name="optimization/w_time"     value="32.0" type="double"/>
