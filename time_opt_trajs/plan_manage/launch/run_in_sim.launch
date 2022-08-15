@@ -7,7 +7,7 @@
   <arg name="vicon" default="1"/>
   <arg name="vicon_fps" default="100"/>
   <arg name="slow_baud_rate" default="true"/>
-  <arg name="mass" default="0.752"/>
+  <arg name="mass" default="0.5"/>
   <arg name="nodelet_manager_name" default="nodelet_manager_control"/>
 
   <arg name="odom_topic" default="/$(arg mav_name)/odom"/>
@@ -28,7 +28,6 @@
     <arg name="mav_name" value="$(arg mav_name)"/>
     <arg name="mav_type" value="$(arg mav_type)"/>
     <arg name="odom_topic" value="$(arg odom_topic)"/>
-
   </include>
 
 
@@ -47,6 +46,7 @@
       <arg name="color/g" value="$(arg color/g)"/>
       <arg name="color/b" value="$(arg color/b)"/>
       <arg name="color/a" value="$(arg color/a)"/>
+      <arg name="odom_topic" value="$(arg odom_topic)"/>
     </include>
 
     <!-- Serial communication for real robot -->
@@ -56,17 +56,17 @@
       <arg name="nodelet_manager_name" value="$(arg nodelet_manager_name)"/>
     </include>
 
-  </group>
-
-
-  <group ns="$(arg mav_name)">
-
     <include file="$(find plan_manage)/launch/planner_sim.launch">
       <arg name="mav_name" value="$(arg mav_name)"/>
       <arg name="world_frame_id" value="$(arg world_frame_id)"/>
       <arg name="mav_id" value="$(arg mav_id)"/>
       <arg name="vins_odom" value="$(arg odom_topic)"/>
+      <arg name="color/r" value="$(arg color/r)"/>
+      <arg name="color/g" value="$(arg color/g)"/>
+      <arg name="color/b" value="$(arg color/b)"/>
+      <arg name="color/a" value="$(arg color/a)"/>
     </include>
+    
   </group>
 
   <include file="$(find plan_manage)/launch/rviz.launch">

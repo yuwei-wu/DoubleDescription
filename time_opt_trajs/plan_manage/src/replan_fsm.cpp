@@ -300,17 +300,17 @@ namespace opt_planner
 
       Eigen::Vector3d pos = info->traj_.getPos(t_cur);
       /* && (end_pt_ - pos).norm() < 0.5 */
-      if (t_cur > info->duration_ - 1e-2 || (pos - end_pt_).norm() < 1e-3)
+      if (t_cur > info->duration_ - 1e-2 || (pos - end_pt_).norm() < 0.1)
       {
         ROS_INFO_STREAM("current time larger than duration");
         setGoal();
         changeFSMExecState(WAIT_TARGET, "FSM");
 
       }
-      // else if((end_pt_ - pos).norm() < no_replan_thresh_){
+      else if((end_pt_ - pos).norm() < no_replan_thresh_){
 
-      // }
-      else if (t_cur > 2.0)
+      }
+      else if (t_cur > replan_thresh_ )
       {
         cout << "[FSM] from exec to replan t_cur " << t_cur << endl;
         changeFSMExecState(REPLAN_TRAJ, "FSM");

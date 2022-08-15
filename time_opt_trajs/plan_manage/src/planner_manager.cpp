@@ -40,7 +40,7 @@ namespace opt_planner
     nh.param("optimization/w_vel", w_total(1), 128.0);
     nh.param("optimization/w_acc", w_total(2), 128.0);
     nh.param("optimization/w_sta_obs", w_total(3), 128.0);
-    nh.param("search/horizon", local_plan_horizon_, 7.5);
+    nh.param("search/horizon", local_plan_horizon_, 7.0);
     nh.param("search/use_jerk", use_jerk_, false);
 
 
@@ -128,6 +128,12 @@ namespace opt_planner
     else{
       endState << local_target, local_data_.traj_.getVel(local_data_.duration_), Eigen::MatrixXd::Zero(3, 1);
     }
+
+    std::cout << "[localPlanner]: startState is " << startState << std::endl;
+    std::cout << "[localPlanner]: endState is " <<  endState << std::endl;
+    
+
+
 
     ros::Time time_now = ros::Time::now();
 
@@ -223,10 +229,8 @@ namespace opt_planner
     {
       std::cout << "[kino replan]: kinodynamic search success." << std::endl;
     }
-
     finder->getKinoTraj(time_res_, kino_path);
     endState.col(0) = kino_path.back();
-    
     visualization_->displayKinoAStarList(kino_path, display_color_, 0);
     return true;
   }

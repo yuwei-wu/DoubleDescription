@@ -567,6 +567,11 @@ Visualization Manager:
     - Class: rviz/PublishPoint
       Single click: true
       Topic: /clicked_point
+    - Class: waypoint_nav_plugin/WaypointNav
+      WaypointsTool:
+        default_height: 0
+        frame_id: /map
+        topic: /f250_ariel/waypoints
   Value: true
   Views:
     Current:

@@ -489,7 +489,6 @@ namespace opt_planner
                                 std::vector<Eigen::Vector3d> &path_list)
   {
     path_list.clear();
-    //yaw_list.clear();
 
     /* ---------- get traj of searching ---------- */
     AccNodePtr node = path_nodes_.back();
@@ -538,6 +537,7 @@ namespace opt_planner
         }
       }
     }
+
 
     return;
   }

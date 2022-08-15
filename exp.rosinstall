@@ -1,7 +1,8 @@
-- git: {local-name: kr_mav_control, uri: 'git@github.com:yuwei-wu/kr_mav_control.git', version: 'opt_time'}
+- git: {local-name: kr_mav_control, uri: 'git@github.com:yuwei-wu/kr_mav_control.git', version: 'opt_f250'}
 - git: {local-name: motion_capture_system, uri: 'git@github.com:yuwei-wu/motion_capture_system.git'}
 - git: {local-name: imu_vn_100, uri: 'git@github.com:yuwei-wu/imu_vn_100.git'}
 - git: {local-name: kr_falcon250_interface, uri: 'git@github.com:tyuezhan/kr_falcon250_interface.git'}
 - git: {local-name: catkin_simple, uri: 'git@github.com:catkin/catkin_simple.git'}
 - git: {local-name: DecompROS, uri: 'git@github.com:yuwei-wu/DecompROS.git', version: 'opt_poly'}
 - git: {local-name: f250_exp_utils, uri: 'git@github.com:yuwei-wu/f250_exp_utils.git'}
+- git: {local-name: waypoint_navigation_plugin, uri: 'git@github.com:KumarRobotics/waypoint_navigation_plugin.git'}

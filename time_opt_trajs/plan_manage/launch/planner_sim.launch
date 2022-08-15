@@ -15,10 +15,10 @@
   <arg name="map_origin_y" value="-30.0"/>
   <arg name="map_origin_z" value="0.05"/>
 
-  <arg name="color/r" value="0.0"/>
-  <arg name="color/g" value="0.0"/>
-  <arg name="color/b" value="1.0"/>
-  <arg name="color/a" value="0.7"/>
+  <arg name="color/r" default="0.0"/>
+  <arg name="color/g" default="0.0"/>
+  <arg name="color/b" default="1.0"/>
+  <arg name="color/a" default="0.7"/>
 
   <arg name="ego_radius" default="0.25"/>
   <arg name="ego_height"  default="0.1"/>
@@ -55,7 +55,7 @@
     <!-- ensure the following topics are matched-->
     <arg name="odom_topic"  value="$(arg vins_odom)"/>
 
-    <arg name="waypoints_topic" value="/$(arg mav_name)/waypoint_generator/waypoints"/>
+    <arg name="waypoints_topic" value="/$(arg mav_name)/waypoints"/>
     <arg name="tracker_topic"   value="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
     <arg name="poly_srv_name"   value="/$(arg mav_name)/mav_services/poly_tracker"/>
 
@@ -91,7 +91,7 @@
     <arg name="search/max_tau"    value="0.5" />
 
     <!--always set to 1.5 times grater than sensing horizon-->
-    <arg name="planning_horizon" value="15.0" /> 
+    <arg name="planning_horizon" value="7.5" /> 
 
     <!-- 1: use 2D Nav Goal to select goal  -->
     <!-- 2: use global waypoints below  -->
@@ -127,15 +127,5 @@
     <param name="robot_scale" value="1.0"/>
     <param name="frame_id" value ="$(arg world_frame_id)"/>
   </node>
-
-  <node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="screen">
-    <remap from="~odom" to="$(arg vins_odom)"/>        
-    <remap from="~goal" to="/move_base_simple/goal"/>
-    <remap from="~waypoints" to="/$(arg mav_name)/waypoint_generator/waypoints"/>
-    <remap from="~traj_start_trigger" to="/traj_start_trigger" />
-    <param name="waypoint_type" value="manual-lonely-waypoint"/>    
-  </node>
-
-
 
 </launch>

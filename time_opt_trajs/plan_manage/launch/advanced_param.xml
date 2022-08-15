@@ -211,7 +211,6 @@
     <!--mapping paras end-->
 
     <!-- kinodynamic path searching -->
-    
     <param name="search/max_tau" value="$(arg search/max_tau)" type="double"/>
     <param name="search/init_max_tau" value="0.5" type="double"/>  
     <param name="search/horizon" value="$(arg planning_horizon)" type="double"/>
