@@ -139,7 +139,8 @@
     <param name="fsm/thresh_replan" value="1.5" type="double"/>
     <param name="fsm/thresh_no_replan" value="2.0" type="double"/>
     <param name="fsm/planning_horizon_time" value="3" type="double"/>
-    <param name="fsm/emergency_time_" value="1.0" type="double"/>
+    <param name="fsm/emergency_time" value="1.0" type="double"/>
+    <param name="fsm/thresh_yawing" value="0.9" type="double"/>
 
     <param name="fsm/waypoint_num" value="$(arg point_num)" type="int"/>
     <param name="fsm/waypoint0_x" value="$(arg point0_x)" type="double"/>
@@ -212,7 +213,7 @@
 
     <!-- kinodynamic path searching -->
     <param name="search/max_tau" value="$(arg search/max_tau)" type="double"/>
-    <param name="search/init_max_tau" value="0.5" type="double"/>  
+    <param name="search/init_max_tau" value="0.6" type="double"/>  
     <param name="search/horizon" value="$(arg planning_horizon)" type="double"/>
     <param name="search/lambda_heu" value="5.0" type="double"/>
     <param name="search/w_time" value="3.0" type="double"/>
@@ -225,10 +226,10 @@
 
 
     <!-- optimization -->
-    <param name="optimization/w_time"     value="32.0" type="double"/>
-    <param name="optimization/w_vel"      value="128.0" type="double"/>
-    <param name="optimization/w_acc"      value="128.0" type="double"/>
-    <param name="optimization/w_sta_obs"  value="4.0" type="double"/>
+    <param name="optimization/w_time"     value="8.0" type="double"/>
+    <param name="optimization/w_vel"      value="240.0" type="double"/>
+    <param name="optimization/w_acc"      value="240.0" type="double"/>
+    <param name="optimization/w_sta_obs"  value="6.0" type="double"/>
     <param name="optimization/w_dyn_obs"  value="2048.0" type="double"/>
     <param name="optimization/bb_back"    value="0.8" type="double"/>
 

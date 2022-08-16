@@ -1,6 +1,4 @@
 #include <path_searching/kino_acc_astar.h>
-
-
 namespace opt_planner
 {
   using namespace std;
@@ -40,7 +38,7 @@ namespace opt_planner
   }
 
 
-  void KinoAccAstar::init(int ego_id, double ego_radius)
+  void KinoAccAstar::init()
   {
     /* ---------- pre-allocated node ---------- */
     path_node_pool_.resize(ksp_.allocate_num_);

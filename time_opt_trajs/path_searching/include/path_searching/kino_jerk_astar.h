@@ -48,7 +48,7 @@ public:
 
   /* main API */
   void setParam(ros::NodeHandle &nh);
-  void init(int ego_id, double ego_radius);
+  void init();
   void reset();
   void intialMap(GridMap::Ptr &grid_map);
   void getKinoTraj(double delta_t, std::vector<Eigen::Vector3d> &path_list);

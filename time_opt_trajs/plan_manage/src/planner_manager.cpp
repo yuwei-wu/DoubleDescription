@@ -28,9 +28,6 @@ namespace opt_planner
     nh.param("max_jerk",  pp_.max_jerk_, -1.0);
 
     nh.param("plan_frame_id", frame_id_, std::string("world"));
-    nh.param("ego_radius", pp_.mav_radius_, 0.27);
-    nh.param("multi_clearance_range", pp_.multi_clearance_range_, 0.2);
-    nh.param("mav_id", pp_.mav_id_, 0);
 
     /* optimization parameters */
     nh.param("optimization/bb_back", bb_back_, 0.5);
@@ -66,12 +63,12 @@ namespace opt_planner
     {
       kinojerk_path_finder_.reset(new KinoJerkAstar);
       kinojerk_path_finder_->setParam(nh);
-      kinojerk_path_finder_->init(pp_.mav_id_, pp_.mav_radius_);
+      kinojerk_path_finder_->init();
       kinojerk_path_finder_->intialMap(grid_map_);
     }else{
       kinoacc_path_finder_.reset(new KinoAccAstar);
       kinoacc_path_finder_->setParam(nh);
-      kinoacc_path_finder_->init(pp_.mav_id_, pp_.mav_radius_);
+      kinoacc_path_finder_->init();
       kinoacc_path_finder_->intialMap(grid_map_);
     }
 
@@ -79,14 +76,11 @@ namespace opt_planner
     visualization_ = vis;
 
     /*  solver intial  */
-    poly_traj_solver_.init(w_total, b_total, pp_.mav_id_, pp_.mav_radius_, pp_.multi_clearance_range_);
+    poly_traj_solver_.init(w_total, b_total);
 
-   
     std::cout << "[PlannerManager]: initPlanModules success!" << std::endl;
 
-
     poly_pub_ = nh.advertise<decomp_ros_msgs::PolyhedronArray>("sikangpolyhedron", 1, true);
-
 
   }
 
@@ -95,7 +89,8 @@ namespace opt_planner
   //*************************************local primitives*****************************************//
   //***********************************************************************************************//
   //***********************************************************************************************//
-  bool PlannerManager::localPlanner(Eigen::MatrixXd &startState)
+  bool PlannerManager::localPlanner(Eigen::MatrixXd &startState,
+                                    ros::Time &time_now)
   { // 3 * 3  [pos, vel, acc]
     // end State could be obtained from previous planned trajs
     Eigen::MatrixXd endState(3,3); // include the start and end state
@@ -116,7 +111,6 @@ namespace opt_planner
 
       local_target = startState.col(0) + (local_plan_horizon_ / dist)  * (global_end_pt_ - startState.col(0));
     }
-
     
     visualization_->displayGoalPoint(local_target, Eigen::Vector4d(1, 0, 0, 1), 0.3, 0);
  
@@ -126,16 +120,12 @@ namespace opt_planner
       endState << local_target, Eigen::MatrixXd::Zero(3, 1), Eigen::MatrixXd::Zero(3, 1);
     }
     else{
-      endState << local_target, local_data_.traj_.getVel(local_data_.duration_), Eigen::MatrixXd::Zero(3, 1);
+      endState << local_target, local_data_.traj_.getVel(local_data_.duration_), local_data_.traj_.getAcc(local_data_.duration_);
     }
 
     std::cout << "[localPlanner]: startState is " << startState << std::endl;
     std::cout << "[localPlanner]: endState is " <<  endState << std::endl;
-    
 
-
-
-    ros::Time time_now = ros::Time::now();
 
     //step two: kinodynamic path searching considering obstacles avoidance
     if (use_jerk_){
@@ -230,7 +220,7 @@ namespace opt_planner
       std::cout << "[kino replan]: kinodynamic search success." << std::endl;
     }
     finder->getKinoTraj(time_res_, kino_path);
-    endState.col(0) = kino_path.back();
+    //endState.col(0) = kino_path.back();
     visualization_->displayKinoAStarList(kino_path, display_color_, 0);
     return true;
   }

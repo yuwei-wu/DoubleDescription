@@ -34,12 +34,12 @@ namespace opt_planner
 
     lbfgs::lbfgs_parameter_t lbfgs_params;
     lbfgs::lbfgs_load_default_parameters(&lbfgs_params);
-    lbfgs_params.mem_size = 16;
+    lbfgs_params.max_iterations = 60;
+    lbfgs_params.mem_size = 32;
     lbfgs_params.past = 3;
-    //lbfgs_params.g_epsilon = 1.0e-16;
     lbfgs_params.min_step = 1.0e-32;
+    lbfgs_params.g_epsilon = 0.0;
     lbfgs_params.delta = 1.0e-2;
-    lbfgs_params.max_iterations = 200;
 
     /* ---------- prepare ---------- */
     double final_cost = 0;
@@ -51,10 +51,8 @@ namespace opt_planner
     /* ---------- optimize ---------- */
     do
     {
-
       double init_vars[var_num_];
       memcpy(init_vars, innerP_.data(), innerP_.size() * sizeof(init_vars[0]));
-      //memcpy(init_vars + innerP_.size(), alloT.data(), alloT.size()* sizeof(init_vars[0]));
       Eigen::Map<Eigen::VectorXd> VT(init_vars + innerP_.size(), alloT_.size());
       RT2VT(alloT_, VT);
 
@@ -84,9 +82,7 @@ namespace opt_planner
         if (checker == CHECKER_TYPE::FEASIBLE)
         {
           is_success = true;
-
           printf("\033[32m Success: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
-
           tc2 = std::chrono::high_resolution_clock::now();
           d1 += std::chrono::duration_cast<std::chrono::duration<double>>(tc2 - tc1).count();
           std::cout << "Piece Number: MinJerk Comp. Time: " << d1 << " s" << std::endl;
@@ -102,9 +98,6 @@ namespace opt_planner
       }
       else
       {
-
-      
-
         if (checker == CHECKER_TYPE::FEASIBLE)
         {
           printf("\033[32m Feasible solution: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
@@ -114,12 +107,13 @@ namespace opt_planner
         {
           refineInit(checker);
           setInit();
+          printf("\033[34m  fails: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
         }
         fail_num++;
-        printf("\033[34m  fails: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
         ROS_WARN("Solver error. Return = %d, %s. Skip this planning.", result, lbfgs::lbfgs_strerror(result));
       }
-    //std::cout << "+++++++++++++++++++++++++++++++  " << std::endl;
+      //std::cout << "+++++++++++++++++++++++++++++++  " << std::endl;
+      iter_num_ = 0;
     } while (is_success == false && infeasible_num < 3 && fail_num < 3);
 
     //std::cout << "Total Time is " << (t2 - t0).toSec() * 1000 << " s" << std::endl;
@@ -500,10 +494,10 @@ namespace opt_planner
     // std::cout << "[PolySolver::objCallback] innerP " << innerP << std::endl;
     // std::cout << "[PolySolver::objCallback] alloT " << alloRT << std::endl;
     // std::cout << "[PolySolver::objCallback] gradP " << gradP << std::endl;
-    // std::cout << "[PolySolver::objCallback] smooth_cost is " << smooth_cost << std::endl;
+    //std::cout << "[PolySolver::objCallback] smooth_cost is " << smooth_cost << std::endl;
     // std::cout << "[PolySolver::objCallback] gradRT " << gradRT << std::endl;
     obj.jerkOpt_.addPieceCostGrad(gradRT, gradP, piece_cost, obj.SFCs_);
-    // std::cout << "[PolySolver::objCallback] cost is " << piece_cost << std::endl;
+    //std::cout << "[PolySolver::objCallback]  piece_cost cost is " << piece_cost << std::endl;
     // std::cout << "[PolySolver::objCallback] gradT " << gradRT << std::endl;
     // std::cout << "[PolySolver::objCallback] gradP " << gradP << std::endl;
 

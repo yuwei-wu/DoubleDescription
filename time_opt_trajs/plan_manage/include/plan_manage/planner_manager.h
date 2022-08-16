@@ -89,7 +89,8 @@ namespace opt_planner
     // optimization
     PolySolver poly_traj_solver_;
 
-    bool localPlanner(Eigen::MatrixXd &startState);
+    bool localPlanner(Eigen::MatrixXd &startState, 
+                      ros::Time &time_now);
     bool have_opt_path_ = false;
     bool use_jerk_ = false;
 

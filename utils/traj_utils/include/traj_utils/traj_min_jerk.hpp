@@ -167,6 +167,27 @@ namespace min_jerk
             return acc;
         }
 
+
+        inline Eigen::Vector3d getJer(double t)
+        {
+            t /= duration;
+            Eigen::Vector3d jer(0.0, 0.0, 0.0);
+            double tn = 1.0;
+            int l = 1;
+            int m = 2;
+            int n = 3;
+            for (int i = TrajOrder - 3; i >= 0; i--)
+            {
+                jer += l * m * n * tn * nCoeffMat.col(i);
+                tn *= t;
+                l++;
+                m++;
+                n++;
+            }
+            jer /= duration * duration * duration;
+            return jer;
+        }
+
         // Get the boundary condition of this piece
         inline const BoundaryCond &getBoundCond() const
         {
@@ -622,6 +643,13 @@ namespace min_jerk
         {
             int pieceIdx = locatePieceIdx(t);
             return pieces[pieceIdx].getAcc(t);
+        }
+
+        // Get the jerk at time t of the trajectory
+        inline Eigen::Vector3d getJer(double t)
+        {
+            int pieceIdx = locatePieceIdx(t);
+            return pieces[pieceIdx].getJer(t);
         }
 
         // Get the position at the juncIdx-th waypoint
@@ -1261,22 +1289,16 @@ namespace min_jerk
 
 
                 // // //size = N-1 i = 0, 1, ..., N-2
-
-                //std::cout << "P1 is " << P1 << std::endl;
                 //std::cout << "i is " << i << std::endl;
 
                 for (int idx = i; idx <= i+1; idx++){
 
                     int corr_k = SFCs[idx].cols();
-
-                    //std::cout << "SFCs[i] is " << SFCs[idx] << std::endl;
-        
-
                     for (int k = 0; k < corr_k; k++)
                     {
                         Eigen::Matrix<double, 3, 1> outerNormal = SFCs[idx].col(k).tail<3>();
-                        double tempsfc = outerNormal.dot(SFCs[idx].col(k).head<3>()-P1);
-                        //std::cout << "[debug::SFC] tempsfc " << tempsfc<< std::endl;
+                        double tempsfc = outerNormal.dot(P1 - SFCs[idx].col(k).head<3>());
+
                         if (tempsfc > 0){
                             costs(3) += -std::log(tempsfc);
                             gdP.col(i) += w_all(3) * 1.0/tempsfc * outerNormal;
@@ -1291,7 +1313,7 @@ namespace min_jerk
             }
 
 
-            //std::cout << "[debug::total] costs " <<costs << std::endl;
+            std::cout << "[debug::total] costs " <<costs << std::endl;
 
             piece_cost = w_all.transpose() * costs;
             

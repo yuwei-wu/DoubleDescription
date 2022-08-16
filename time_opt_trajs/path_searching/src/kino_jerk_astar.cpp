@@ -26,7 +26,6 @@ namespace opt_planner
     nh.param("search/lambda_heu", ksp_.lambda_heu_, -1.0);
     nh.param("search/allocate_num", ksp_.allocate_num_, -1);
     nh.param("search/vis_check_num", ksp_.vis_check_num_, -1);
-
     nh.param("search/w_time", ksp_.w_time_, -1.0);
 
     nh.param("max_vel",  ksp_.max_vel_, -1.0);
@@ -41,7 +40,7 @@ namespace opt_planner
   }
 
 
-  void KinoJerkAstar::init(int ego_id, double ego_radius)
+  void KinoJerkAstar::init()
   {
     /* ---------- pre-allocated node ---------- */
     path_node_pool_.resize(ksp_.allocate_num_);
