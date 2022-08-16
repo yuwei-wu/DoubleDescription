@@ -38,24 +38,21 @@ SynchronizerViconVins sync_vicon_vins_;
 
 bool _set_start_pose = false;
 Eigen::Vector3d _start_pos;
+Eigen::Vector3d _euler_angles;
 
+double _pos_error, _ori_error;
 
 
 void viconVinsCallback(const nav_msgs::OdometryConstPtr &vicon_odom,
                        const nav_msgs::OdometryConstPtr &vins_odom)
 {   
-
     if(!_set_start_pose){
       _start_pos << vicon_odom->pose.pose.position.x, 
                    vicon_odom->pose.pose.position.y, 
                    vicon_odom->pose.pose.position.z;
       _set_start_pose = true;
     }
-
-
-
     odom_msg = *vins_odom;
-    
     /*   position difference  */
     Eigen::Vector3d vicon_pos(vicon_odom->pose.pose.position.x, 
                               vicon_odom->pose.pose.position.y, 
@@ -67,7 +64,7 @@ void viconVinsCallback(const nav_msgs::OdometryConstPtr &vicon_odom,
 
     vicon_pos -= _start_pos;
 
-    if ((vicon_pos - vins_pos).norm() > 5.0 ){
+    if ((vicon_pos - vins_pos).norm() > _pos_error){
      
         ROS_WARN("The vins-fusion pos estimation has been larger than 5 meters, autonomous E-STOP for safety");
 
@@ -76,19 +73,39 @@ void viconVinsCallback(const nav_msgs::OdometryConstPtr &vicon_odom,
 
         std_msgs::Empty estop_cmd;
         _estop_pub.publish(estop_cmd);
+        return;
 
     } 
 
     /*   orientation difference  */
-    Eigen::Quaterniond vicon_q = Eigen::Quaterniond(vicon_odom->pose.pose.orientation.w,
+    //   vins_q = r_q * vicon_q;
+    // 
+    Eigen::Quaterniond vicon_q_inv = Eigen::Quaterniond(vicon_odom->pose.pose.orientation.w,
                                                     vicon_odom->pose.pose.orientation.x,
                                                     vicon_odom->pose.pose.orientation.y,
-                                                    vicon_odom->pose.pose.orientation.z);
+                                                    -vicon_odom->pose.pose.orientation.z);
 
     Eigen::Quaterniond vins_q = Eigen::Quaterniond(vins_odom->pose.pose.orientation.w,
                                                    vins_odom->pose.pose.orientation.x,
                                                    vins_odom->pose.pose.orientation.y,
                                                    vins_odom->pose.pose.orientation.z);
+    Eigen::Quaterniond r_q = vins_q * vicon_q_inv;
+
+    _euler_angles << atan2(2.0 * (r_q.w() * r_q.x() + r_q.y() * r_q.z()),
+                           1.0 - 2.0 * (r_q.x() * r_q.x() + r_q.y() * r_q.y())),
+                     asin(2.0 * (r_q.w() * r_q.y() - r_q.z() * r_q.x())),
+                     atan2(2.0 * (r_q.w() * r_q.z() + r_q.x() * r_q.y()),
+                           1.0 - 2.0 * (r_q.y() * r_q.y() + r_q.z() * r_q.z()));       
+    
+    
+    if (_euler_angles.norm() > _ori_error){
+     
+        ROS_WARN("The vins-fusion ori estimation drifts, autonomous E-STOP for safety");
+        ROS_INFO_STREAM("The euler_angles.norm() is "<< _euler_angles.norm());
+        std_msgs::Empty estop_cmd;
+        _estop_pub.publish(estop_cmd);
+        return;
+    }
 
     _new_odom_pub.publish(odom_msg);
 }
@@ -108,8 +125,8 @@ int main(int argc, char** argv) {
 
     _estop_pub = node.advertise<std_msgs::Empty>("estop", 10);
     _new_odom_pub = node.advertise<nav_msgs::Odometry>("odom", 200);
-
-
+    node.param("pos_error", _pos_error , 5.0);
+    node.param("ori_error", _ori_error , 1.0);
     //ros::Subscriber odom_sub_ =  node_.subscribe<nav_msgs::Odometry>("odom_world", 10, &GridMap::odomCallback, this);
 
     ros::spin();

@@ -7,6 +7,9 @@
     <remap from="~vins_odom" to="/vins_fusion/imu_propagate"/>
     <remap from="~vicon_odom" to="/vicon/$(arg mav_name)/odom"/>
     <remap from="~estop" to="/$(arg mav_name)/estop"/>
+		<param name="pos_error" value="5.0"/>
+		<param name="ori_error" value="1.0" />
+
   </node>
 
 </launch>
