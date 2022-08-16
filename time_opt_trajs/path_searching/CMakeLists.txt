@@ -18,17 +18,17 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   visualization_msgs
-  local_mapping
   cv_bridge
   pcl_ros
   traj_utils
+  motion_primitive_library
 )
 
 
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES path_searching
- CATKIN_DEPENDS local_mapping pcl_ros traj_utils
+ CATKIN_DEPENDS pcl_ros traj_utils
 #  DEPENDS system_lib
 )
 
@@ -43,9 +43,10 @@ include_directories(
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -O3 -Wall")
 
 add_library( path_searching 
-    src/kinodynamic_astar.cpp
+    src/kino_acc_astar.cpp
+    src/kino_jerk_astar.cpp
     )
-target_link_libraries( path_searching
+target_link_libraries(path_searching
     ${catkin_LIBRARIES} 
     )  
 

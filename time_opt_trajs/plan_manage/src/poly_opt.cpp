@@ -34,12 +34,12 @@ namespace opt_planner
 
     lbfgs::lbfgs_parameter_t lbfgs_params;
     lbfgs::lbfgs_load_default_parameters(&lbfgs_params);
-    lbfgs_params.mem_size = 16;
+    lbfgs_params.max_iterations = 60;
+    lbfgs_params.mem_size = 32;
     lbfgs_params.past = 3;
-    //lbfgs_params.g_epsilon = 1.0e-16;
     lbfgs_params.min_step = 1.0e-32;
+    lbfgs_params.g_epsilon = 0.0;
     lbfgs_params.delta = 1.0e-2;
-    lbfgs_params.max_iterations = 200;
 
     /* ---------- prepare ---------- */
     double final_cost = 0;
@@ -73,7 +73,6 @@ namespace opt_planner
 
       jerkOpt_.getTraj(minJerkTraj_);
       int checker = isFeasibile();
-      std::cout << " checker IS  " << checker << std::endl;
 
       if (result == lbfgs::LBFGS_CONVERGENCE ||
           result == lbfgs::LBFGSERR_MAXIMUMITERATION ||
@@ -103,8 +102,6 @@ namespace opt_planner
       else
       {
 
-      
-
         if (checker == CHECKER_TYPE::FEASIBLE)
         {
           printf("\033[32m Feasible solution: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
@@ -114,24 +111,25 @@ namespace opt_planner
         {
           refineInit(checker);
           setInit();
+          printf("\033[34m  fails: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
         }
         fail_num++;
-        printf("\033[34m  fails: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
         ROS_WARN("Solver error. Return = %d, %s. Skip this planning.", result, lbfgs::lbfgs_strerror(result));
       }
     //std::cout << "+++++++++++++++++++++++++++++++  " << std::endl;
+    iter_num_ = 0;
     } while (is_success == false && infeasible_num < 3 && fail_num < 3);
 
-    //std::cout << "Total Time is " << (t2 - t0).toSec() * 1000 << " s" << std::endl;
+    std::cout << "Total Time is " << (t2 - t0).toSec() * 1000 << " s" << std::endl;
     // 1. success and no infeasible points    is_success == true
     // 2. fails but has feasible solution     is_feasible == true
     // 3. fails upper 3
-    if (is_feasible)
+    if (is_feasible || is_success)
     {
-      is_success = true;
+      return true;
     }
 
-    return is_success;
+    return false;
   }
 
 
@@ -170,7 +168,7 @@ namespace opt_planner
   {
 
     // refine the trajectory
-    std::cout << "[PolySolver::refineInit]" << std::endl;
+    //std::cout << "[PolySolver::refineInit]" << std::endl;
     std::vector<int> idxs;
 
     switch (checker)
@@ -409,11 +407,13 @@ namespace opt_planner
     if (!minJerkTraj_.checkMaxVelRate(b_(0) + bb_(0)))
     {
       //std::cout << " minJerkTraj_.getMaxVelRate() " << minJerkTraj_.getMaxVelRate() << std::endl;
+      std::cout << " [PolySolver::Status] Velocity infeasible ... "<< std::endl;
       return CHECKER_TYPE::VEL_INFI;
     }
     if (!minJerkTraj_.checkMaxAccRate(b_(1) + bb_(1)))
     {
       //std::cout << " minJerkTraj_.getMaxAccRate() " << minJerkTraj_.getMaxAccRate() << std::endl;
+      std::cout << " [PolySolver::Status] Acceleration infeasible ... "<< std::endl;
       return CHECKER_TYPE::ACC_INFI;
     }
 
@@ -455,7 +455,7 @@ namespace opt_planner
             Eigen::Vector3d pt = minJerkTraj_[i].getPos(it);
             //std::cout <<"[debug] module 2 , test_p "  << test_p << "   the pt is " << pt << std::endl;
             //std::cout <<"[debug] module 2 , insidehPoly(SFCs_[i], pt)  "  << insidehPoly(SFCs_[i], pt) << std::endl;
-
+            std::cout << " [PolySolver::Status] SFC infeasible ... "<< std::endl;
             return CHECKER_TYPE::STA_INFI;
           }
         }
@@ -500,10 +500,10 @@ namespace opt_planner
     // std::cout << "[PolySolver::objCallback] innerP " << innerP << std::endl;
     // std::cout << "[PolySolver::objCallback] alloT " << alloRT << std::endl;
     // std::cout << "[PolySolver::objCallback] gradP " << gradP << std::endl;
-    // std::cout << "[PolySolver::objCallback] smooth_cost is " << smooth_cost << std::endl;
+    //std::cout << "[PolySolver::objCallback] smooth_cost is " << smooth_cost << std::endl;
     // std::cout << "[PolySolver::objCallback] gradRT " << gradRT << std::endl;
     obj.jerkOpt_.addPieceCostGrad(gradRT, gradP, piece_cost, obj.SFCs_);
-    // std::cout << "[PolySolver::objCallback] cost is " << piece_cost << std::endl;
+    //std::cout << "[PolySolver::objCallback] cost is " << piece_cost << std::endl;
     // std::cout << "[PolySolver::objCallback] gradT " << gradRT << std::endl;
     // std::cout << "[PolySolver::objCallback] gradP " << gradP << std::endl;
 

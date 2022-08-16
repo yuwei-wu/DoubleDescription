@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(plan_manage)
+project(opt_planner)
 
 set(CMAKE_BUILD_TYPE "Release")
 ADD_COMPILE_OPTIONS(-std=c++11 )
@@ -15,21 +15,20 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   kr_mav_msgs
   kr_tracker_msgs
-  local_mapping
   path_searching
   traj_utils
   cv_bridge
   message_runtime
-  plan_msgs
   path_searching
   decomp_ros_utils
+  motion_primitive_library
 )
 
 # catkin_package(CATKIN_DEPENDS message_runtime)
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES plan_manage
- CATKIN_DEPENDS local_mapping path_searching traj_utils message_runtime
+ LIBRARIES opt_planner
+ CATKIN_DEPENDS path_searching traj_utils message_runtime
 #  DEPENDS system_lib
 )
 
@@ -41,31 +40,14 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
 )
 
-add_executable(opt_planner_node
-  src/planner_node.cpp 
-  src/replan_fsm.cpp
+add_library(opt_planner
   src/planner_manager.cpp
   src/poly_opt.cpp
   )
-target_link_libraries(opt_planner_node 
+target_link_libraries(opt_planner
   ${catkin_LIBRARIES}
   )
-add_dependencies(opt_planner_node 
+add_dependencies(opt_planner
   ${${PROJECT_NAME}_EXPORTED_TARGETS} 
   ${catkin_EXPORTED_TARGETS}
   )
-
-install(TARGETS opt_planner_node
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  PATTERN ".svn" EXCLUDE
-)
-
-install(DIRECTORY launch/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-  PATTERN ".svn" EXCLUDE)
