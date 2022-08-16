@@ -1313,7 +1313,7 @@ namespace min_jerk
             }
 
 
-            std::cout << "[debug::total] costs " <<costs << std::endl;
+            //std::cout << "[debug::total] costs " <<costs << std::endl;
 
             piece_cost = w_all.transpose() * costs;
             
