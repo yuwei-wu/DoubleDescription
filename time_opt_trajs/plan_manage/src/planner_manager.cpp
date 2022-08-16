@@ -260,11 +260,14 @@ namespace opt_planner
     Eigen::Vector3d q;
     int query_index, cnt_num = 0;
     
+    Eigen::Vector3d end_point = path_pts.back() + 0.1 * ( path_pts.back() -  path_pts[path_size-1]);
+    path_pts.push_back(end_point);
+
     // step 1 : set the intial lengh
     // add start time
     temp_ts.push_back(0.0);
 
-    for (size_t i = 0; i < path_size-1; i++)
+    for (size_t i = 0; i < path_size; i++)
     {
       query_index = i;
       // check wehter or not we need to generate the point
