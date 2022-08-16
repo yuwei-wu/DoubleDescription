@@ -16,7 +16,6 @@ namespace opt_planner
                                        const std::shared_ptr<MPL::VoxelMapUtil> &map_util)
   {
     /* read algorithm parameters */
-    std::cout << "initPlanModules"  << std::endl;
 
     /* general parameters */
     nh.param("max_v",  pp_.max_vel_, -1.0);
@@ -84,7 +83,6 @@ namespace opt_planner
     std::vector<Eigen::MatrixXd> hPolys;
     std::vector<Eigen::Vector3d> path_pts;
 
-
     ros::Time time_now = ros::Time::now();
 
     //step two: kinodynamic path searching considering obstacles avoidance
@@ -103,7 +101,6 @@ namespace opt_planner
         std::cout << "[localPlanner]: kinodynamic search fails!" << std::endl;
         return false;
       }
-
     }
 
    std::cout << "[localPlanner]: corridor generation..." << std::endl;
@@ -197,7 +194,7 @@ namespace opt_planner
       std::cout << "[kino replan]: kinodynamic search success." << std::endl;
     }
     finder->getKinoTraj(time_res_, kino_path);
-    endState.col(0) = kino_path.back();
+    //endState.col(0) = kino_path.back();
     visualization_->displayKinoAStarList(kino_path, Eigen::Vector4d(0.8, 1, 0, 1), 0);
     return true;
   }
@@ -211,7 +208,6 @@ namespace opt_planner
     hPolys.clear();
     vec_E<Polyhedron3D> poly_disp;
     Eigen::MatrixXd hPoly;
-
 
     std::vector<Eigen::Vector3d> temp_pts;
     std::vector<double> temp_ts;
@@ -230,10 +226,8 @@ namespace opt_planner
     std::cout << "[PlannerManager]: dim is " << dim << "  res " << res << std::endl;
 
     decomp_util_.set_global_bbox(map_util_->getOrigin(), map_size);
-    
-
     decomp_util_.set_obs(map_util_->getCloud());
-    decomp_util_.set_local_bbox(Vec3f(3.0, 3.0, 1.5), Vec3f(bb_back_, 3.0, 1.5));
+    decomp_util_.set_local_bbox(Vec3f(4.0, 3.0, 2.0), Vec3f(bb_back_, 3.0, 2.0));
 
     size_t path_size = path_pts.size();
     Vec3f seed_point1, seed_point2;

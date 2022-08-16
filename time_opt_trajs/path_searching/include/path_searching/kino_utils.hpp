@@ -55,23 +55,6 @@ namespace opt_planner {
 
   };
 
-
-  // double range(double angle){
-  //   // range the angle into (-PI, PI]
-  //   double psi = angle;
-
-  //   if (angle > M_PI)
-  //   {
-  //     psi = 2 * M_PI - angle;
-  //   }
-  //   else if (angle <= -M_PI)
-  //   {
-  //     psi = angle + 2 * M_PI;
-  //   }
-  //   return psi;
-  // }
-
-
   template <typename T>
   void retrievePath(T end_node, std::vector<T> &nodes)
   {

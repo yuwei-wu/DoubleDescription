@@ -41,7 +41,7 @@ namespace opt_planner
       w_ = wts;
       // w_time_,  w_vel_,  w_acc_,  w_sta_obs_
       b_ =  bds;
-      bb_ = 0.2 * bds;
+      bb_ = 0.3 * bds;
       jerkOpt_.setWeights(w_, b_);
 
     }

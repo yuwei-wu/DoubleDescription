@@ -20,7 +20,6 @@ namespace opt_planner
     nh.param("search/init_max_tau", ksp_.init_max_tau_, -1.0);
     nh.param("search/horizon", ksp_.horizon_, -1.0);
     nh.param("search/resolution_astar", ksp_.resolution_, -1.0);
-    nh.param("search/time_resolution", ksp_.time_resolution_, -1.0);
     nh.param("search/lambda_heu", ksp_.lambda_heu_, -1.0);
     nh.param("search/allocate_num", ksp_.allocate_num_, -1);
     nh.param("search/vis_check_num", ksp_.vis_check_num_, -1);
@@ -33,9 +32,7 @@ namespace opt_planner
 
   void KinoJerkAstar::intialMap(const std::shared_ptr<MPL::VoxelMapUtil> &map_util)
   {
-
     kino_map_util_ = map_util;
-    ROS_INFO_STREAM("Finish the map intialization of the kinodynamic front-end. ");
   }
 
 

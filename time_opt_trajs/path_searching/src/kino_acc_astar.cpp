@@ -34,9 +34,7 @@ namespace opt_planner
 
   void KinoAccAstar::intialMap(const std::shared_ptr<MPL::VoxelMapUtil> &map_util)
   {
-
     kino_map_util_ = map_util;
-    ROS_INFO_STREAM("Finish the map intialization of the kinodynamic front-end. ");
   }
 
 
@@ -92,13 +90,11 @@ namespace opt_planner
 
     cur_node->index = start_index;
 
-
     Eigen::VectorXd final_state(6);
     double time_to_goal;
 
     final_state.head(3) = end_pt_;
     final_state.tail(3) = end_vel_;
-
   
     cur_node->f_score = ksp_.lambda_heu_ * estimateHeuristic(cur_node->state, final_state, time_to_goal);
     cur_node->node_state = IN_OPEN_SET;
