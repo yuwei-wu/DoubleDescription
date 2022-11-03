@@ -80,11 +80,11 @@ namespace opt_planner
           result == lbfgs::LBFGS_STOP)
       {
 
-        if (checker == CHECKER_TYPE::FEASIBLE)
+        if (checker == CHECKER_TYPE::FEASIBLE && !isnan(final_cost))
         {
           is_success = true;
 
-          printf("\033[32m Success: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
+          printf("\033[32mSuccess: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
 
           tc2 = std::chrono::high_resolution_clock::now();
           d1 += std::chrono::duration_cast<std::chrono::duration<double>>(tc2 - tc1).count();
@@ -93,7 +93,7 @@ namespace opt_planner
         else
         {
           // insert new points
-          printf("\033[33m  infeasible: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
+          printf("\033[33mInfeasible: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
           infeasible_num++;
           refineInit(checker);
           setInit();
@@ -104,15 +104,13 @@ namespace opt_planner
 
         if (checker == CHECKER_TYPE::FEASIBLE)
         {
-          printf("\033[32m Feasible solution: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
+          printf("\033[32mFeasible solution: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
           is_feasible = true; // compromise to a feasible solution
+          break;
         }
-        else
-        {
-          refineInit(checker);
-          setInit();
-          printf("\033[34m  fails: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
-        }
+        refineInit(checker);
+        setInit();
+        printf("\033[34mFails: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
         fail_num++;
         ROS_WARN("Solver error. Return = %d, %s. Skip this planning.", result, lbfgs::lbfgs_strerror(result));
       }
@@ -120,16 +118,11 @@ namespace opt_planner
     iter_num_ = 0;
     } while (is_success == false && infeasible_num < 3 && fail_num < 3);
 
-    std::cout << "Total Time is " << (t2 - t0).toSec() * 1000 << " s" << std::endl;
+    std::cout << "[minJerk Optimizer]Total Time is " << (t2 - t0).toSec() * 1000 << " ms" << std::endl;
     // 1. success and no infeasible points    is_success == true
     // 2. fails but has feasible solution     is_feasible == true
     // 3. fails upper 3
-    if (is_feasible || is_success)
-    {
-      return true;
-    }
-
-    return false;
+    return (is_success || is_feasible);
   }
 
 
