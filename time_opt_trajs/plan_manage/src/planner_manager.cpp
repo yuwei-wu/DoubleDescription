@@ -2,7 +2,7 @@
 #include <plan_manage/planner_manager.h>
 #include <thread>
 #include <visualization_msgs/Marker.h>
-
+#include <chrono>
 namespace opt_planner
 {
 
@@ -84,10 +84,11 @@ namespace opt_planner
     std::vector<Eigen::Vector3d> path_pts;
 
     ros::Time time_now = ros::Time::now();
+    auto start_timer = std::chrono::high_resolution_clock::now();
 
     //step two: kinodynamic path searching considering obstacles avoidance
     if (use_jerk_){
-
+      
       if (!kinoPlan(startState, endState, time_now, path_pts, kinojerk_path_finder_))
       {
         std::cout << "[localPlanner]: kinodynamic search fails!" << std::endl;
@@ -103,7 +104,10 @@ namespace opt_planner
       }
     }
 
-   std::cout << "[localPlanner]: corridor generation..." << std::endl;
+    auto end_timer = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_timer - start_timer);
+    std::cout << "kino plan took"<<duration.count() << "micro sec"<< std::endl;
+   std::cout << "[localPlanner]  starting corridor generation..." << std::endl;
 
     //step three: generating corridor
     if (!getSikangConst(path_pts, inner_pts, allo_ts, hPolys))
