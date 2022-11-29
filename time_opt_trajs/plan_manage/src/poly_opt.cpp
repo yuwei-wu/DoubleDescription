@@ -372,26 +372,6 @@ namespace opt_planner
     return new_hPoly.leftCols(idx + 1);
   }
 
-  bool PolySolver::insidehPoly(Eigen::MatrixXd hPoly,
-                               Eigen::Vector3d pt)
-  {
-
-    unsigned int corr_num = hPoly.cols();
-    Eigen::Vector3d p_, n_;
-    for (int i = 0; i < corr_num; i++)
-    {
-
-      p_ = hPoly.col(i).head<3>();
-      n_ = hPoly.col(i).tail<3>();
-
-      if (n_.dot(pt - p_) > 1e-5)
-      {
-        return false;
-      }
-    }
-    return true;
-  }
-
   // return true if the trajectory is satisfying
   int PolySolver::isFeasibile()
   {
@@ -420,7 +400,6 @@ namespace opt_planner
       min_jerk::CoefficientMat coeff = minJerkTraj_[i].getCoeffMat();
       for (int k = 0; k < corr_k; k++)
       {
-
         Eigen::Vector3d outer_n = SFCs_[i].col(k).tail<3>();
         Eigen::Vector3d point = SFCs_[i].col(k).head<3>();
 
@@ -438,16 +417,10 @@ namespace opt_planner
         {
           if (it >= 0 && it <= durs[i])
           {
-            // Eigen::Vector3d test_p = coeff.col(0) * std::pow(it, 5) +
-            //                          coeff.col(1) * std::pow(it, 4) +
-            //                          coeff.col(2) * std::pow(it, 3) +
-            //                          coeff.col(3) * std::pow(it, 2) +
-            //                          coeff.col(4) * std::pow(it, 1) +
-            //                          coeff.col(5) * std::pow(it, 0);
-
-            Eigen::Vector3d pt = minJerkTraj_[i].getPos(it);
-            //std::cout <<"[debug] module 2 , test_p "  << test_p << "   the pt is " << pt << std::endl;
-            //std::cout <<"[debug] module 2 , insidehPoly(SFCs_[i], pt)  "  << insidehPoly(SFCs_[i], pt) << std::endl;
+            double t = 0.5 * (it +  durs[i]);
+            Eigen::Vector3d pt = minJerkTraj_[i].getPos(t);
+            std::cout <<"[debug] module 2 , insidehPoly(SFCs_[i], pt)  "  << insidehPoly(SFCs_[i], pt) << std::endl;
+            std::cout <<" pt  "  << pt << std::endl;
             std::cout << " [PolySolver::Status] SFC infeasible ... "<< std::endl;
             return CHECKER_TYPE::STA_INFI;
           }
