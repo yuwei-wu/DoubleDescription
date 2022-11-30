@@ -252,7 +252,7 @@ namespace opt_planner
       list.push_back(pt);
     }
     Eigen::Vector4d color(1, 0, 0, 1);
-    displayMarkerList(optimal_list_pub, list, 0.15, color, id);
+    displayMarkerList(optimal_list_pub, list, 0.3, color, id);
   }
 
   void PlanningVisualization::displayKinoAStarList(std::vector<Eigen::Vector3d> kino_a_star_paths, 
@@ -279,7 +279,7 @@ namespace opt_planner
     //   displayMarkerList(a_star_list_pub, list, scale, color, id+i);
     // }
     color(3) = 0.5;
-    displayMarkerList(a_star_list_pub, kino_a_star_paths, 0.1, color, id + i); // real ids used: [ id ~ id+a_star_paths.size() ]
+    displayMarkerList(a_star_list_pub, kino_a_star_paths, 0.2, color, id + i); // real ids used: [ id ~ id+a_star_paths.size() ]
 
 
   }

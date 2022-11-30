@@ -120,7 +120,7 @@ namespace opt_planner
     }
     std::cout << "[localPlanner]: optimization..." << std::endl;
 
-
+    visualization_->displayKinoAStarList(path_pts, Eigen::Vector4d(0.8, 1, 0, 1), 0);
     //step four: unconstrained optimziation
     if (!poly_traj_solver_.minJerkTrajOpt(inner_pts, 
                                           allo_ts,
@@ -213,9 +213,9 @@ namespace opt_planner
     //   endState.col(0) = kino_path.back();
     // }
     endState.col(0) = kino_path.back();
-    kino_path.push_back(endState.col(0));
+    //kino_path.push_back(endState.col(0));
 
-    visualization_->displayKinoAStarList(kino_path, Eigen::Vector4d(0.8, 1, 0, 1), 0);
+
     return true;
   }
 
@@ -233,34 +233,34 @@ namespace opt_planner
     std::vector<double> temp_ts;
     std::vector<Eigen::MatrixXd> temp_hPolys;
     //setup the pointcloud
-    // Vec3f map_size;
+    Vec3f map_size;
 
-    // auto dim = map_util_->getDim();
-    // auto res = map_util_->getRes();
+    auto dim = map_util_->getDim();
+    auto res = map_util_->getRes();
 
-    // map_size(0) = res * dim(0);
-    // map_size(1) = res * dim(1);
-    // map_size(2) = res * dim(2);
+    map_size(0) = res * dim(0);
+    map_size(1) = res * dim(1);
+    map_size(2) = res * dim(2);
 
-    // std::cout << "[PlannerManager]: map_origin is " << map_util_->getOrigin()<< "   map_size is " << map_size << std::endl;
-    // std::cout << "[PlannerManager]: dim is " << dim << "  res " << res << std::endl;
+    std::cout << "[PlannerManager]: map_origin is " << map_util_->getOrigin()<< "   map_size is " << map_size << std::endl;
+    std::cout << "[PlannerManager]: dim is " << dim << "  res " << res << std::endl;
 
     // decomp_util_.set_global_bbox(map_util_->getOrigin(), map_size);
     
     
     Vec2f map_vertical_bbx;
-
-    auto dim = map_util_->getDim();
-    auto res = map_util_->getRes();
-
     Vec3f origin = map_util_->getOrigin();
 
     map_vertical_bbx(0) = origin(2);
     map_vertical_bbx(1) = origin(2) + res * dim(2);
     
     decomp_util_.set_vertical_bbox(map_vertical_bbx);
+
+    std::cout << "[PlannerManager]:map_vertical_bbxis " << map_vertical_bbx.transpose() << std::endl;
+
+
     decomp_util_.set_obs(map_util_->getCloud());
-    decomp_util_.set_local_bbox(Vec3f(4.0, 3.0, 1.5), Vec3f(bb_back_, 3.0, 1.5));
+    decomp_util_.set_local_bbox(Vec3f(4.0, 3.0, 2.0), Vec3f(bb_back_, 3.0, 2.0));
 
     size_t path_size = path_pts.size();
     Vec3f seed_point1, seed_point2;
@@ -337,12 +337,11 @@ namespace opt_planner
     }
     temp_ts.push_back(path_size * time_res_);
 
-    std::cout << "the temp_ts is " << temp_ts.size() << std::endl;
-    std::cout << "the temp_hPolys.size() is " << temp_hPolys.size() << std::endl;
+    // std::cout << "the temp_ts is " << temp_ts.size() << std::endl;
+    // std::cout << "the temp_hPolys.size() is " << temp_hPolys.size() << std::endl;
 
     //2. delete the overlap corridors
     int M = temp_hPolys.size();
-      std::cout << "the M is " << M << std::endl;
     if (M > 8){
 
       bool is_overlap;
@@ -413,7 +412,7 @@ namespace opt_planner
     }
 
     std::cout << "final_size is " << final_size << std::endl;
-    //std::cout << "inner_pts is " << inner_pts << std::endl;
+    std::cout << "inner_pts is " << inner_pts << std::endl;
     // display
     // decomp_ros_msgs::PolyhedronArray poly_msg = DecompROS::polyhedron_array_to_ros(poly_disp);
     // poly_msg.header.frame_id = frame_id_;
