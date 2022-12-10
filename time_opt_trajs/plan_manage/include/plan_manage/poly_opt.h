@@ -16,6 +16,24 @@ using std::vector;
 namespace opt_planner
 {
 
+  inline bool insidehPoly(Eigen::MatrixXd hPoly,
+                   Eigen::Vector3d pt)
+  {
+
+    unsigned int corr_num = hPoly.cols();
+    Eigen::Vector3d p_, n_;
+    for (int i = 0; i < corr_num; i++)
+    {
+      p_ = hPoly.col(i).head<3>();
+      n_ = hPoly.col(i).tail<3>();
+      if (n_.dot(pt - p_) > 1e-8)
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
   class PolySolver{
     
   public: 
@@ -67,7 +85,7 @@ namespace opt_planner
       FEASIBLE = 5
     };
 
-    double t_coeff_ = 1.05;
+    double t_coeff_ = 1.1;
     int isFeasibile();
     void setInit();
     void refineInit(int checker);
@@ -84,8 +102,8 @@ namespace opt_planner
 
     Eigen::MatrixXd refinePoly(Eigen::MatrixXd hPoly,
                                Eigen::VectorXd hCol);
-    bool insidehPoly(Eigen::MatrixXd hPoly,
-                     Eigen::Vector3d pt);
+
+
 
     template <typename EIGENVEC>
     void VT2RT(Eigen::VectorXd &RT, const EIGENVEC &VT);

@@ -42,6 +42,11 @@ namespace opt_planner {
     double max_dyaw_  = 0.8;
     double max_ddyaw_ = 0.2;
 
+
+    double max_vel_z_ = 1.5;
+    double max_acc_z_ = 3.0;
+
+    
     double horizon_ = 7.5;
     double lambda_heu_ = 10.0;
     double half_fov_theta_ = 2.0;

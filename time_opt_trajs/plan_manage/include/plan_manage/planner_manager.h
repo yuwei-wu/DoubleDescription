@@ -18,6 +18,7 @@
 #include <path_searching/kino_acc_astar.h>
 #include <path_searching/kino_jerk_astar.h>
 
+#include "sdlp.hpp"
 namespace opt_planner
 {
 
@@ -53,7 +54,7 @@ namespace opt_planner
     std::unique_ptr<KinoJerkAstar> kinojerk_path_finder_;
     std::unique_ptr<KinoAccAstar> kinoacc_path_finder_;
 
-    double time_res_ = 0.2;
+    double time_res_ = 0.1;
     template <typename T>
     bool kinoPlan(Eigen::MatrixXd &startState,
                   Eigen::MatrixXd &endState,
@@ -88,6 +89,75 @@ namespace opt_planner
   private:
     /* main planning algorithms & modules */
     PlanningVisualization::Ptr visualization_;
+
+
+    //poly is defined as h0*x + h1*y + h2*z + h3 <= 0 
+    inline bool overlap(const Eigen::MatrixXd &hPoly0,
+                        const Eigen::MatrixXd &hPoly1,
+                        const double eps = 1.0e-6)
+
+    {
+
+        unsigned int m = hPoly0.cols();
+        unsigned int n = hPoly1.cols();
+
+        Eigen::MatrixX4d A(m + n, 4);
+        Eigen::Vector4d c, x;
+        Eigen::VectorXd b(m + n);
+
+        Eigen::MatrixX3d normals0 = (hPoly0.bottomRows<3>()).transpose();  //  (m, 3)
+        Eigen::MatrixX3d normals1 = (hPoly1.bottomRows<3>()).transpose();  //  (n, 3)
+
+        A.leftCols<3>().topRows(m) = normals0; // m * 3
+        A.leftCols<3>().bottomRows(n) = normals1;
+        A.rightCols<1>().setConstant(1.0);
+
+        for (int i = 0; i < m; i ++)
+        {
+           b(i) =  normals0.row(i).dot(hPoly0.col(i).head<3>());
+        }
+        for (int j = 0; j < n; j ++)
+        {
+           b(m+j) =  normals1.row(j).dot(hPoly1.col(j).head<3>());
+        }
+
+        c.setZero();
+        c(3) = -1.0;
+
+        const double minmaxsd = sdlp::linprog<4>(c, A, b, x);
+
+        return minmaxsd < -eps && !std::isinf(minmaxsd);
+    }
+
+  void visPoly(std::vector<Eigen::MatrixXd> &hPolys)
+  {
+    decomp_ros_msgs::PolyhedronArray poly_msg;
+    for (const auto &hPoly : hPolys)
+    {
+      decomp_ros_msgs::Polyhedron msg;
+      geometry_msgs::Point pt, n;
+        
+      for (unsigned int i = 0; i < hPoly.cols(); i++)
+      {  
+        pt.x = hPoly(0, i);
+        pt.y = hPoly(1, i);
+        pt.z = hPoly(2, i);
+        n.x  = hPoly(3, i);
+        n.y  = hPoly(4, i);
+        n.z  = hPoly(5, i);
+        msg.points.push_back(pt);
+        msg.normals.push_back(n);
+      }
+      poly_msg.polyhedrons.push_back(msg);
+    }
+
+    poly_msg.header.frame_id = frame_id_;
+    poly_pub_.publish(poly_msg);
+
+    return;
+  }
+
+
 
   public:
     typedef unique_ptr<PlannerManager> Ptr;

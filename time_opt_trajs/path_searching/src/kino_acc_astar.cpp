@@ -28,7 +28,11 @@ namespace opt_planner
 
     nh.param("max_v",  ksp_.max_vel_, -1.0);
     nh.param("max_a",  ksp_.max_acc_, -1.0);
-    nh.param("max_j", ksp_.max_jerk_, -1.0);
+    nh.param("max_j",  ksp_.max_jerk_, -1.0);
+
+    nh.param("max_v_z",  ksp_.max_vel_z_, -1.0);
+    nh.param("max_a_z",  ksp_.max_acc_z_, -1.0);
+
 
   }
 
@@ -54,10 +58,11 @@ namespace opt_planner
     // set up the inputs
     Eigen::Vector3d um;
     double res = ksp_.max_acc_ * 0.5;
+    double res_z =  ksp_.max_acc_z_ * 0.5;
     acc_inputs_.clear();
     for (double ax = -ksp_.max_acc_; ax <= ksp_.max_acc_ + 1e-3; ax += res)
       for (double ay = -ksp_.max_acc_; ay <= ksp_.max_acc_ + 1e-3; ay += res)
-        for (double az = -ksp_.max_acc_; az <= ksp_.max_acc_ + 1e-3; az += res)
+        for (double az = -ksp_.max_acc_z_; az <= ksp_.max_acc_z_ + 1e-3; az += res_z)
         {
           um << ax, ay, az;
           acc_inputs_.push_back(um);
@@ -65,8 +70,8 @@ namespace opt_planner
     
   }
 
-  int KinoAccAstar::search(Eigen::MatrixXd startState, // 3 * 2
-                           Eigen::MatrixXd endState,  // 3 * 2
+  int KinoAccAstar::search(Eigen::MatrixXd startState, // 3 * 3
+                           Eigen::MatrixXd endState,  // 3 * 3
                            ros::Time time_start,
                            bool init)
   {
@@ -241,7 +246,7 @@ namespace opt_planner
 
           /* Check maximal velocity */
           Eigen::Vector3d pro_v = pro_state.tail(3);
-          if (fabs(pro_v(0)) > ksp_.max_vel_ || fabs(pro_v(1)) > ksp_.max_vel_ || fabs(pro_v(2)) > ksp_.max_vel_)
+          if (fabs(pro_v(0)) > ksp_.max_vel_ || fabs(pro_v(1)) > ksp_.max_vel_ || fabs(pro_v(2)) > ksp_.max_vel_z_)
           {
             if (init_search)
               std::cout << "vel is" << pro_v << std::endl;
