@@ -27,7 +27,10 @@ namespace opt_planner
     nh.param("map_frame", frame_id_, std::string(""));
 
     /* optimization parameters */
-    nh.param("optimization/bb_back", bb_back_, 0.5);
+    nh.param("optimization/bb_xy_size", bb_xy_size_, 3.0);
+    nh.param("optimization/bb_z_up", bb_z_up_, 1.0);
+    nh.param("optimization/bb_z_down", bb_z_down_, 1.0);
+
     Eigen::VectorXd w_total(4), b_total(2);
     nh.param("optimization/w_time", w_total(0), 32.0);
     nh.param("optimization/w_vel", w_total(1), 128.0);
@@ -233,20 +236,17 @@ namespace opt_planner
     std::vector<double> temp_ts;
     std::vector<Eigen::MatrixXd> temp_hPolys;
     //setup the pointcloud
-    Vec3f map_size;
+    //Vec3f map_size;
 
     auto dim = map_util_->getDim();
     auto res = map_util_->getRes();
 
-    map_size(0) = res * dim(0);
-    map_size(1) = res * dim(1);
-    map_size(2) = res * dim(2);
-
-    std::cout << "[PlannerManager]: map_origin is " << map_util_->getOrigin()<< "   map_size is " << map_size << std::endl;
-    std::cout << "[PlannerManager]: dim is " << dim << "  res " << res << std::endl;
-
+    // map_size(0) = res * dim(0);
+    // map_size(1) = res * dim(1);
+    // map_size(2) = res * dim(2);
+    // std::cout << "[PlannerManager]: map_origin is " << map_util_->getOrigin()<< "   map_size is " << map_size << std::endl;
+    // std::cout << "[PlannerManager]: dim is " << dim << "  res " << res << std::endl;
     // decomp_util_.set_global_bbox(map_util_->getOrigin(), map_size);
-    
     
     Vec2f map_vertical_bbx;
     Vec3f origin = map_util_->getOrigin();
@@ -260,7 +260,7 @@ namespace opt_planner
 
 
     decomp_util_.set_obs(map_util_->getCloud());
-    decomp_util_.set_local_bbox(Vec3f(4.0, 3.0, 2.0), Vec3f(bb_back_, 3.0, 2.0));
+    decomp_util_.set_local_bbox(Vec3f(bb_xy_size_, bb_xy_size_, bb_z_up_), Vec3f(bb_xy_size_, bb_xy_size_, bb_z_down_));
 
     size_t path_size = path_pts.size();
     Vec3f seed_point1, seed_point2;

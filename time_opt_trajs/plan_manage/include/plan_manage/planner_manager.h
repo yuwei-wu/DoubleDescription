@@ -84,7 +84,7 @@ namespace opt_planner
                 std::vector<min_jerk::BoundaryCond> &bCond);
 
 
-    double bb_back_ = 0.5;
+    double bb_xy_size_, bb_z_up_, bb_z_down_;
 
   private:
     /* main planning algorithms & modules */
