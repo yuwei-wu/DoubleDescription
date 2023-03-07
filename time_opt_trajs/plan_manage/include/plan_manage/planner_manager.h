@@ -87,6 +87,9 @@ namespace opt_planner
     double bb_xy_size_, bb_z_up_, bb_z_down_;
 
   private:
+    //Yifei added debugging
+    bool if_write_poly_file_ = true;
+    uint local_planner_iteration_ = 0;
     /* main planning algorithms & modules */
     PlanningVisualization::Ptr visualization_;
 

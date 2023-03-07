@@ -1,9 +1,9 @@
-// #include <fstream>
+#include <fstream>
 #include <plan_manage/planner_manager.h>
 #include <thread>
 #include <visualization_msgs/Marker.h>
 #include <chrono>
-
+// #include <fstream>
 
 namespace opt_planner
 {
@@ -82,7 +82,10 @@ namespace opt_planner
   //***********************************************************************************************//
   bool PlannerManager::localPlanner(Eigen::MatrixXd &startState, 
                                     Eigen::MatrixXd &endState)
-  { // 3 * 3  [pos, vel, acc]
+  { 
+    //Yifei debug:
+    ++this->local_planner_iteration_;
+    // 3 * 3  [pos, vel, acc]
     // end State could be obtained from previous planned trajs
     Eigen::MatrixXd inner_pts; // (4, N -1)
     Eigen::VectorXd allo_ts;
@@ -114,7 +117,7 @@ namespace opt_planner
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_timer - start_timer);
     std::cout << "kino plan took"<<duration.count() << "micro sec"<< std::endl;
    std::cout << "[localPlanner]  starting corridor generation..." << std::endl;
-
+    
     //step three: generating corridor
     if (!getSikangConst(path_pts, inner_pts, allo_ts, hPolys))
     {
@@ -417,6 +420,22 @@ namespace opt_planner
     // decomp_ros_msgs::PolyhedronArray poly_msg = DecompROS::polyhedron_array_to_ros(poly_disp);
     // poly_msg.header.frame_id = frame_id_;
     // poly_pub_.publish(poly_msg);
+    if (this-> if_write_poly_file_){
+      Eigen::IOFormat matformat(Eigen::StreamPrecision, 0, ", ", "\n", "", "", "","\n");
+      ofstream poly_array_file;
+      poly_array_file.open("/home/yifei/h_poly"+std::to_string(this->local_planner_iteration_)+".txt");
+      for (unsigned long mat_idx = 0; mat_idx < hPolys.size();  mat_idx++){
+        poly_array_file << hPolys[mat_idx].format(matformat) << '\n';
+      }
+      poly_array_file.close();
+      poly_array_file.open("/home/yifei/path_pts"+std::to_string(this->local_planner_iteration_)+".txt");
+      poly_array_file << inner_pts.format(matformat);
+      poly_array_file.close();
+      poly_array_file.open("/home/yifei/allo_ts"+std::to_string(this->local_planner_iteration_)+".txt");
+      poly_array_file << allo_ts.format(matformat);
+      poly_array_file.close();
+    }
+    
     visPoly(hPolys);
 
     return true;
