@@ -88,7 +88,7 @@ namespace opt_planner
 
   private:
     //Yifei added debugging
-    bool if_write_poly_file_ = true;
+    bool if_write_poly_file_ = false;
     uint local_planner_iteration_ = 0;
     /* main planning algorithms & modules */
     PlanningVisualization::Ptr visualization_;

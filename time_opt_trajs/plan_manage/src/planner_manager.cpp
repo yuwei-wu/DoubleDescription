@@ -425,6 +425,7 @@ namespace opt_planner
       ofstream poly_array_file;
       poly_array_file.open("/home/yifei/h_poly"+std::to_string(this->local_planner_iteration_)+".txt");
       for (unsigned long mat_idx = 0; mat_idx < hPolys.size();  mat_idx++){
+        std::cout<<hPolys[mat_idx];
         poly_array_file << hPolys[mat_idx].format(matformat) << '\n';
       }
       poly_array_file.close();
