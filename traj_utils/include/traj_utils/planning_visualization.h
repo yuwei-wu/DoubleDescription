@@ -30,7 +30,7 @@ namespace opt_planner
   public:
     PlanningVisualization(/* args */) {}
     ~PlanningVisualization() {}
-    PlanningVisualization(ros::NodeHandle &nh);
+    PlanningVisualization(ros::NodeHandle &nh, std::string frame_id);
 
     typedef std::shared_ptr<PlanningVisualization> Ptr;
 

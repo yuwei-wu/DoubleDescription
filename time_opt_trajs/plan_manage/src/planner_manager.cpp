@@ -15,7 +15,7 @@ namespace opt_planner
   PlannerManager::~PlannerManager() { std::cout << "des manager" << std::endl; }
 
   void PlannerManager::initPlanModules(ros::NodeHandle &nh, 
-                                       const std::shared_ptr<MPL::VoxelMapUtil> &map_util)
+                                       const std::shared_ptr<MPL::VoxelMapUtil> &map_util, std::string frame_id)
   {
     /* read algorithm parameters */
 
@@ -24,7 +24,8 @@ namespace opt_planner
     nh.param("max_a",  pp_.max_acc_, -1.0);
     nh.param("max_j",  pp_.max_jerk_, -1.0);
 
-    nh.param("map_frame", frame_id_, std::string(""));
+    // nh.param("map_frame", frame_id_, std::string(""));
+    frame_id_ = frame_id;
 
     /* optimization parameters */
     nh.param("optimization/bb_xy_size", bb_xy_size_, 3.0);
@@ -62,7 +63,7 @@ namespace opt_planner
     }
 
     /*  visualization intial  */
-    visualization_.reset(new opt_planner::PlanningVisualization(nh));
+    visualization_.reset(new opt_planner::PlanningVisualization(nh, frame_id_));
 
 
     /*  solver intial  */

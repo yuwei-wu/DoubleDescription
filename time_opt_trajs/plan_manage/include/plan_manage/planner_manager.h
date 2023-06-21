@@ -38,7 +38,7 @@ namespace opt_planner
     bool EmergencyStop(Eigen::Vector3d stop_pos);
 
     void initPlanModules(ros::NodeHandle &nh, 
-                         const std::shared_ptr<MPL::VoxelMapUtil> &map_util);
+                         const std::shared_ptr<MPL::VoxelMapUtil> &map_util, std::string frame_id);
 
     PlanParameters pp_;
 

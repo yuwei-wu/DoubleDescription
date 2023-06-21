@@ -4,18 +4,17 @@ using std::cout;
 using std::endl;
 namespace opt_planner
 {
-  PlanningVisualization::PlanningVisualization(ros::NodeHandle &nh)
+  PlanningVisualization::PlanningVisualization(ros::NodeHandle &nh, std::string frame_id)
   {
     node = nh;
+    frame_id_ = frame_id;
 
     goal_point_pub = nh.advertise<visualization_msgs::Marker>("local_goal_point", 2);
 
     global_list_pub = nh.advertise<visualization_msgs::Marker>("global_list", 2);
     init_list_pub = nh.advertise<visualization_msgs::Marker>("init_list", 2);
     optimal_list_pub = nh.advertise<visualization_msgs::Marker>("optimal_list", 2);
-    a_star_list_pub = nh.advertise<visualization_msgs::Marker>("kino_astar_list", 20);
-    
-    nh.param("map_frame", frame_id_, std::string(""));
+    a_star_list_pub = nh.advertise<visualization_msgs::Marker>("kino_astar_list", 20);    
   }
 
 
