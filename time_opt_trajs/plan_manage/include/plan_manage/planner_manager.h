@@ -76,7 +76,7 @@ namespace opt_planner
     // optimization
     PolySolver poly_traj_solver_;
 
-    bool localPlanner(Eigen::MatrixXd &startState, Eigen::MatrixXd &endState);
+    bool localPlanner(Eigen::MatrixXd &startState, Eigen::MatrixXd &endState, std::vector<Eigen::Vector3d> &path_pts);
     bool have_opt_path_ = false;
     bool use_jerk_ = false;
 
