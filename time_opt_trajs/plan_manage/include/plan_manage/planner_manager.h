@@ -160,6 +160,38 @@ namespace opt_planner
     return;
   }
 
+  inline Eigen::MatrixX4d convert(const Eigen::MatrixXd &hPoly)
+  {
+    int m = hPoly.cols();
+    Eigen::MatrixX4d newhPoly(m, 4);
+
+    // std::cout << "hPoly"  << hPoly << std::endl;
+    // std::cout << " newhPoly"  << newhPoly<< std::endl;
+
+    newhPoly.leftCols<3>() = (hPoly.bottomRows<3>()).transpose();
+    //std::cout << " newhPoly"  << newhPoly<< std::endl;
+
+    for (int i = 0; i < m; i ++)
+    {
+      newhPoly(i, 3) = - (hPoly.col(i).tail<3>()).dot(hPoly.col(i).head<3>());
+    }
+    //std::cout << " newhPoly"  << newhPoly<< std::endl;
+
+    return newhPoly;
+  }
+
+
+  inline void convert(std::vector<Eigen::MatrixXd> &hPolys,
+                      std::vector<Eigen::MatrixX4d> &NewhPolys)
+  {
+    NewhPolys.clear();
+    for (const auto &hPoly : hPolys)
+    {
+      NewhPolys.push_back(convert(hPoly));
+    }
+
+    return;
+  }
 
 
   public:

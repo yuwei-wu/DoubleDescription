@@ -216,18 +216,17 @@ bool PlannerManager::getSikangConst(std::vector<Eigen::Vector3d> &path_pts,
   std::vector<double> temp_ts;
   std::vector<Eigen::MatrixXd> temp_hPolys;
   // setup the pointcloud
-  // Vec3f map_size;
+  Vec3f map_size;
 
   auto dim = map_util_->getDim();
   auto res = map_util_->getRes();
 
-  // map_size(0) = res * dim(0);
-  // map_size(1) = res * dim(1);
-  // map_size(2) = res * dim(2);
-  // std::cout << "[PlannerManager]: map_origin is " << map_util_->getOrigin()<<
-  // "   map_size is " << map_size << std::endl; std::cout << "[PlannerManager]:
-  // dim is " << dim << "  res " << res << std::endl;
-  // decomp_util_.set_global_bbox(map_util_->getOrigin(), map_size);
+  map_size(0) = res * dim(0);
+  map_size(1) = res * dim(1);
+  map_size(2) = res * dim(2);
+   std::cout << "[PlannerManager]: map_origin is " << map_util_->getOrigin()<< "map_size is " << map_size << std::endl; 
+   std::cout << "[PlannerManager]: dim is " << dim << "  res " << res << std::endl;
+  decomp_util_.set_global_bbox(map_util_->getOrigin(), map_size);
 
   Vec2f map_vertical_bbx;
   Vec3f origin = map_util_->getOrigin();
@@ -320,14 +319,14 @@ bool PlannerManager::getSikangConst(std::vector<Eigen::Vector3d> &path_pts,
 
   // 2. delete the overlap corridors
   int M = temp_hPolys.size();
-  if (M > 8) {
+  if (M > 5) {
     bool is_overlap;
     std::deque<int> idices;
     idices.push_front(M - 1);
     for (int i = M - 1; i >= 0; i--) {
       for (int j = 0; j < i; j++) {
         if (j < i - 1) {
-          is_overlap = overlap(temp_hPolys[i], temp_hPolys[j], 0.01);
+          is_overlap = overlap(temp_hPolys[i], temp_hPolys[j], 0.1);
         } else {
           is_overlap = true;
         }
