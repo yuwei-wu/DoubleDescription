@@ -26,7 +26,7 @@ namespace opt_planner
     {
       p_ = hPoly.col(i).head<3>();
       n_ = hPoly.col(i).tail<3>();
-      if (n_.dot(pt - p_) > 1e-8)
+      if (n_.dot(pt - p_) > 1e-3)
       {
         return false;
       }

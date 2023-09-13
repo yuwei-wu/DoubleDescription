@@ -326,7 +326,7 @@ bool PlannerManager::getSikangConst(std::vector<Eigen::Vector3d> &path_pts,
     for (int i = M - 1; i >= 0; i--) {
       for (int j = 0; j < i; j++) {
         if (j < i - 1) {
-          is_overlap = overlap(temp_hPolys[i], temp_hPolys[j], 0.1);
+          is_overlap = overlap(temp_hPolys[i], temp_hPolys[j],1e-5);
         } else {
           is_overlap = true;
         }
