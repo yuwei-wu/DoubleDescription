@@ -6,7 +6,7 @@
 #include <ros/ros.h>
 #include <traj_utils/traj_min_jerk.hpp>
 
-#include <traj_utils/lbfgs.hpp>
+#include <traj_utils/lbfgs_old.hpp>
 #include <unordered_map>
 #include <traj_utils/math.h>
 #include <traj_utils/plan_container.hpp>

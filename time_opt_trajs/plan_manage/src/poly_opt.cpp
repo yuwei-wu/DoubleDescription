@@ -32,8 +32,8 @@ namespace opt_planner
     tc1 = std::chrono::high_resolution_clock::now();
     ros::Time t0 = ros::Time::now(), t1, t2;
 
-    lbfgs::lbfgs_parameter_t lbfgs_params;
-    lbfgs::lbfgs_load_default_parameters(&lbfgs_params);
+    lbfgs_old::lbfgs_parameter_t lbfgs_params;
+    lbfgs_old::lbfgs_load_default_parameters(&lbfgs_params);
     lbfgs_params.max_iterations = 60;
     lbfgs_params.mem_size = 32;
     lbfgs_params.past = 3;
@@ -59,7 +59,7 @@ namespace opt_planner
       RT2VT(alloT_, VT);
 
       t1 = ros::Time::now();
-      int result = lbfgs::lbfgs_optimize(var_num_,
+      int result = lbfgs_old::lbfgs_optimize(var_num_,
                                          init_vars,
                                          &final_cost,
                                          PolySolver::objCallback,
@@ -74,10 +74,10 @@ namespace opt_planner
       jerkOpt_.getTraj(minJerkTraj_);
       int checker = isFeasibile();
 
-      if (result == lbfgs::LBFGS_CONVERGENCE ||
-          result == lbfgs::LBFGSERR_MAXIMUMITERATION ||
-          result == lbfgs::LBFGS_ALREADY_MINIMIZED ||
-          result == lbfgs::LBFGS_STOP)
+      if (result == lbfgs_old::LBFGS_CONVERGENCE ||
+          result == lbfgs_old::LBFGSERR_MAXIMUMITERATION ||
+          result == lbfgs_old::LBFGS_ALREADY_MINIMIZED ||
+          result == lbfgs_old::LBFGS_STOP)
       {
 
         if (checker == CHECKER_TYPE::FEASIBLE && !isnan(final_cost))
@@ -112,7 +112,7 @@ namespace opt_planner
         setInit();
         printf("\033[34mFails: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
         fail_num++;
-        ROS_WARN("Solver error. Return = %d, %s. Skip this planning.", result, lbfgs::lbfgs_strerror(result));
+        ROS_WARN("Solver error. Return = %d, %s. Skip this planning.", result, lbfgs_old::lbfgs_strerror(result));
       }
     //std::cout << "+++++++++++++++++++++++++++++++  " << std::endl;
     iter_num_ = 0;
