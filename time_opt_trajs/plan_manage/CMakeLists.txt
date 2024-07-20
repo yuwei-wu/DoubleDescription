@@ -20,7 +20,6 @@ find_package(catkin REQUIRED COMPONENTS
   traj_utils
   cv_bridge
   message_runtime
-  plan_msgs
   path_searching
   decomp_ros_utils
 )

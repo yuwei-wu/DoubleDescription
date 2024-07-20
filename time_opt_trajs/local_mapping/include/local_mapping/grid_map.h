@@ -8,7 +8,6 @@
 #include <iostream>
 #include <random>
 #include <nav_msgs/Odometry.h>
-#include <sensor_msgs/CameraInfo.h>
 #include <queue>
 #include <ros/ros.h>
 #include <tuple>
@@ -24,6 +23,9 @@
 #include <message_filters/time_synchronizer.h>
 
 #include <local_mapping/raycast.h>
+
+#include <envsim_msgs/ObstacleArray.h>
+#include <envsim_msgs/Obstacle.h>
 
 
 #define logit(x) (log((x) / (1 - (x))))
@@ -56,7 +58,6 @@ struct MappingParameters {
   double obstacles_inflation_;
   string frame_id_;
   int pose_type_;
-  bool pub_inflate_;
 
   /* camera parameters */
   double cx_, cy_, fx_, fy_;
@@ -70,7 +71,6 @@ struct MappingParameters {
   bool use_depth_filter_;
   double k_depth_scaling_factor_;
   int skip_pixel_;
-  int depth_size_u_, depth_size_v_;
 
   /* raycasting */
   double p_hit_, p_miss_, p_min_, p_max_, p_occ_;  // occupancy probability
@@ -148,7 +148,7 @@ public:
   GridMap() {}
   ~GridMap() {}
 
-  enum { POSE_STAMPED = 1, ODOMETRY = 2, INTINSIC_POSE_STAMPED = 3, INVALID_IDX = -10000 };
+  enum { POSE_STAMPED = 1, ODOMETRY = 2, INVALID_IDX = -10000 };
 
   // global cylinder voxel map
   //std::shared_ptr<JPS::OccMapUtil> sta_map_ptr_ = std::make_shared<JPS::OccMapUtil>();
@@ -211,19 +211,18 @@ private:
   MappingData md_;
   double ego_r_, ego_h_;
 
+  void updateMap();
+
   // get depth image and camera pose
   void depthPoseCallback(const sensor_msgs::ImageConstPtr& img,
                          const geometry_msgs::PoseStampedConstPtr& pose);
-  void camDepthPoseCallback(const sensor_msgs::CameraInfoConstPtr& Cam,
-                         const sensor_msgs::ImageConstPtr& img,
-                         const geometry_msgs::PoseStampedConstPtr& pose);
-  void intrinsicCallback(const sensor_msgs::CameraInfoConstPtr& odom);
   void extrinsicCallback(const nav_msgs::OdometryConstPtr& odom);
   void depthOdomCallback(const sensor_msgs::ImageConstPtr& img, const nav_msgs::OdometryConstPtr& odom);
   void cloudCallback(const sensor_msgs::PointCloud2ConstPtr& img);
   //@yuwei
   void cylindersCallback(const sensor_msgs::PointCloud2ConstPtr& msg);
   void odomCallback(const nav_msgs::OdometryConstPtr& odom);
+  void obstaclesCallback(const envsim_msgs::ObstacleArrayConstPtr &obs_msgs);
 
   // update occupancy by raycasting
   void updateOccupancyCallback(const ros::TimerEvent& /*event*/);
@@ -246,22 +245,17 @@ private:
       SyncPolicyImageOdom;
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, geometry_msgs::PoseStamped>
       SyncPolicyImagePose;
-  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::CameraInfo, sensor_msgs::Image, geometry_msgs::PoseStamped>
-      SyncPolicyCamImagePose;
   typedef shared_ptr<message_filters::Synchronizer<SyncPolicyImagePose>> SynchronizerImagePose;
   typedef shared_ptr<message_filters::Synchronizer<SyncPolicyImageOdom>> SynchronizerImageOdom;
-  typedef shared_ptr<message_filters::Synchronizer<SyncPolicyCamImagePose>> SynchronizerCamImagePose;
 
   ros::NodeHandle node_;
   shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> depth_sub_;
   shared_ptr<message_filters::Subscriber<geometry_msgs::PoseStamped>> pose_sub_;
   shared_ptr<message_filters::Subscriber<nav_msgs::Odometry>> odom_sub_;
-  shared_ptr<message_filters::Subscriber<sensor_msgs::CameraInfo>> cam_sub_;
   SynchronizerImagePose sync_image_pose_;
   SynchronizerImageOdom sync_image_odom_;
-  SynchronizerCamImagePose sync_cam_image_pose_;
 
-  ros::Subscriber indep_cloud_sub_, indep_odom_sub_, indep_cylinders_sub_, extrinsic_sub_;
+  ros::Subscriber indep_cloud_sub_, indep_odom_sub_, indep_obstacles_sub_, extrinsic_sub_;
   ros::Publisher map_pub_, map_inf_pub_, global_map_pub_;
   ros::Timer occ_timer_, vis_timer_;
 

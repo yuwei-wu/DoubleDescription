@@ -10,6 +10,7 @@
   <arg name="map_origin_y"/>
   <arg name="map_origin_z"/>
 
+
   <!-- drone information -->
   <arg name="mav_id"/>
   
@@ -34,6 +35,7 @@
   <arg name="camera_pose_topic"/>
   <arg name="depth_topic"/>
   <arg name="cloud_topic"/>
+  <arg name="obstacles_topic"/>
   <arg name="tracker_topic"/>
   <arg name="poly_srv_name"/>
 
@@ -92,7 +94,10 @@
     <remap from="~tracker_cmd"  to="$(arg tracker_topic)"/>
 
     <!-- used for occ map -->
-    <remap from = "~depth_topic" to = "$(arg depth_topic)"/>
+    <remap from ="~grid_map_cloud" to="$(arg cloud_topic)"/>
+    <remap from = "~grid_map_pose"   to = "$(arg camera_pose_topic)"/> 
+    <remap from = "~grid_map_depth" to = "$(arg depth_topic)"/>
+    <remap from = "~grid_map_obstacles" to = "$(arg obstacles_topic)"/>
 
     <param name="max_vel"  value="$(arg max_vel)"  type="double"/>
     <param name="max_acc"  value="$(arg max_acc)"  type="double"/>
@@ -125,51 +130,14 @@
     <param name="map_origin_y" value="$(arg map_origin_y)"/>
     <param name="map_origin_z" value="$(arg map_origin_z)"/>
 
-    <!-- used for occ map -->
-    <remap from ="~grid_map_cloud" to="$(arg cloud_topic)"/>
-    <remap from = "~grid_map_pose"   to = "$(arg camera_pose_topic)"/> 
-    <remap from = "~grid_map_depth" to = "$(arg depth_topic)"/>
-
-    <param name="max_vel"  value="$(arg max_vel)"  type="double"/>
-    <param name="max_acc"  value="$(arg max_acc)"  type="double"/>
-    <param name="max_jerk" value="$(arg max_jerk)" type="double"/>
-
-    <!-- planning fsm -->
-    <param name="fsm/flight_type" value="$(arg flight_type)" type="int"/>
-    <param name="fsm/thresh_replan" value="1.5" type="double"/>
-    <param name="fsm/thresh_no_replan" value="2.0" type="double"/>
-    <param name="fsm/planning_horizon_time" value="3" type="double"/>
-    <param name="fsm/emergency_time" value="1.0" type="double"/>
-    <param name="fsm/thresh_yawing" value="0.9" type="double"/>
-
-    <param name="fsm/waypoint_num" value="$(arg point_num)" type="int"/>
-    <param name="fsm/waypoint0_x" value="$(arg point0_x)" type="double"/>
-    <param name="fsm/waypoint0_y" value="$(arg point0_y)" type="double"/>
-    <param name="fsm/waypoint0_z" value="$(arg point0_z)" type="double"/>
-    <param name="fsm/waypoint1_x" value="$(arg point1_x)" type="double"/>
-    <param name="fsm/waypoint1_y" value="$(arg point1_y)" type="double"/>
-    <param name="fsm/waypoint1_z" value="$(arg point1_z)" type="double"/>
-    <param name="fsm/waypoint2_x" value="$(arg point2_x)" type="double"/>
-    <param name="fsm/waypoint2_y" value="$(arg point2_y)" type="double"/>
-    <param name="fsm/waypoint2_z" value="$(arg point2_z)" type="double"/>
-   
-    <!--mapping paras global map-->
-    <param name="map_size_x" value="$(arg map_size_x_)" /> 
-    <param name="map_size_y" value="$(arg map_size_y_)" /> 
-    <param name="map_size_z" value="$(arg map_size_z_)" /> 
-
-    <!-- <param name="map_origin_x" value="$(arg map_origin_x)"/>
-    <param name="map_origin_y" value="$(arg map_origin_y)"/>
-    <param name="map_origin_z" value="$(arg map_origin_z)"/> -->
-
-    <param name="grid_map/ground_height" value="-0.1"/>
+    <param name="ground_height" value="$(arg map_origin_z)"/>
 
     <param name="grid_map/resolution"      value="0.1" /> 
-    <param name="grid_map/local_update_range_x"  value="6.0" /> 
-    <param name="grid_map/local_update_range_y"  value="6.0" /> 
-    <param name="grid_map/local_update_range_z"  value="4.0" /> 
-    <param name="grid_map/obstacles_inflation"     value="0.1" /> 
-    <param name="grid_map/local_map_margin" value="5"/>
+    <param name="grid_map/local_update_range_x"  value="10" /> 
+    <param name="grid_map/local_update_range_y"  value="10" /> 
+    <param name="grid_map/local_update_range_z"  value="6" /> 
+    <param name="grid_map/obstacles_inflation"     value="0.12" /> 
+    <param name="grid_map/local_map_margin" value="50"/>
 
 
     <!-- camera parameter -->
@@ -188,24 +156,24 @@
     <param name="grid_map/qw" value="$(arg qw)"/>
 
     <!-- depth filter -->
-    <param name="grid_map/use_depth_filter" value="true"/>
+    <param name="grid_map/use_depth_filter" value="false"/>
     <param name="grid_map/depth_filter_tolerance" value="0.15"/>
     <param name="grid_map/depth_filter_maxdist"   value="5.0"/>
     <param name="grid_map/depth_filter_mindist"   value="0.2"/>
     <param name="grid_map/depth_filter_margin"    value="2"/>
-    <param name="grid_map/k_depth_scaling_factor" value="1000.0"/>
+    <param name="grid_map/k_depth_scaling_factor" value="4000.0"/>
     <param name="grid_map/skip_pixel" value="1"/>
     <!-- local fusion -->
     <param name="grid_map/p_hit"  value="0.65"/>
     <param name="grid_map/p_miss" value="0.35"/>
     <param name="grid_map/p_min"  value="0.12"/>
-    <param name="grid_map/p_max"  value="0.95"/>
+    <param name="grid_map/p_max"  value="0.90"/>
     <param name="grid_map/p_occ"  value="0.80"/>
-    <param name="grid_map/min_ray_length" value="0.3"/>
-    <param name="grid_map/max_ray_length" value="6.0"/>
+    <param name="grid_map/min_ray_length" value="0.5"/>
+    <param name="grid_map/max_ray_length" value="5.0"/>
 
-    <param name="grid_map/virtual_ceil_height"   value="-5.0"/>
-    <param name="grid_map/visualization_truncate_height"   value="3.0"/>
+    <param name="grid_map/virtual_ceil_height"   value="5.0"/>
+    <param name="grid_map/visualization_truncate_height"   value="2.4"/>
     <param name="grid_map/show_occ_time"  value="false"/>
     <param name="grid_map/pose_type"     value="2"/>  
     <param name="grid_map/frame_id"      value="$(arg frame_id)"/>
@@ -213,7 +181,7 @@
 
     <!-- kinodynamic path searching -->
     <param name="search/max_tau" value="$(arg search/max_tau)" type="double"/>
-    <param name="search/init_max_tau" value="0.6" type="double"/>  
+    <param name="search/init_max_tau" value="0.5" type="double"/>  
     <param name="search/horizon" value="$(arg planning_horizon)" type="double"/>
     <param name="search/lambda_heu" value="5.0" type="double"/>
     <param name="search/w_time" value="3.0" type="double"/>
@@ -222,14 +190,12 @@
     <param name="search/margin" value="0.2" type="double"/>
     <param name="search/allocate_num" value="100000" type="int"/>
     <param name="search/vis_check_num" value="15" type="int"/>
-    <param name="search/use_jerk" value="false" type="bool"/>
-
 
     <!-- optimization -->
-    <param name="optimization/w_time"     value="8.0" type="double"/>
-    <param name="optimization/w_vel"      value="240.0" type="double"/>
-    <param name="optimization/w_acc"      value="240.0" type="double"/>
-    <param name="optimization/w_sta_obs"  value="6.0" type="double"/>
+    <param name="optimization/w_time"     value="32.0" type="double"/>
+    <param name="optimization/w_vel"      value="128.0" type="double"/>
+    <param name="optimization/w_acc"      value="128.0" type="double"/>
+    <param name="optimization/w_sta_obs"  value="4.0" type="double"/>
     <param name="optimization/w_dyn_obs"  value="2048.0" type="double"/>
     <param name="optimization/bb_back"    value="0.8" type="double"/>
 

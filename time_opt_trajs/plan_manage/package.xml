@@ -17,7 +17,6 @@
   <build_depend>path_searching</build_depend>
   <build_depend>traj_utils</build_depend>
   <build_depend>generating_corridor</build_depend>
-  <build_depend>plan_msgs</build_depend>
   <build_depend>decomp_ros_utils</build_depend>
 
   

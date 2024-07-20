@@ -18,8 +18,6 @@
 #include <nav_msgs/Odometry.h>
 
 #include <local_mapping/grid_map.h>
-#include <plan_msgs/DataDisp.h>
-#include <plan_msgs/PolyTraj.h>
 #include <plan_manage/planner_manager.h>
 #include <traj_utils/planning_visualization.h>
 
@@ -62,7 +60,6 @@ namespace opt_planner
     int waypoint_num_;
     double planning_horizon_time_;
     double emergency_time_;
-    double thresh_yawing_;
 
 
     /* planning data */
@@ -101,8 +98,8 @@ namespace opt_planner
     //@yuwei
     bool setGoal();
     double desired_yaw_;
-    bool setYaw();
-    ros::Time init_yaw_time_, odom_time_;
+    void setYaw();
+    ros::Time init_yaw_time_;
 
     /* multi agent helpers  */
     Eigen::Vector3d initial_offset_;
@@ -115,20 +112,6 @@ namespace opt_planner
 
     void waypointCallback(const nav_msgs::PathConstPtr &msg);
     void odometryCallback(const nav_msgs::OdometryConstPtr &msg);
-    void BroadcastCallback(const plan_msgs::PolyTrajConstPtr &msg);
-
-    void yawRange(double &dyaw){
-
-      if (dyaw > M_PI){
-        dyaw = 2 * M_PI - dyaw;
-      }
-      else if (dyaw <= -M_PI)
-      {
-        dyaw = dyaw + 2 * M_PI;
-      }
-
-
-    }
 
   public:
     ReplanFSM(/* args */)

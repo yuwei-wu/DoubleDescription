@@ -1,5 +1,5 @@
 <launch>
-  <arg name="rviz_config" default="$(find plan_manage)/rviz/config_exp.rviz"/>
+  <arg name="rviz_config" default="$(find multi_mav_launch)/rviz/config.rviz"/>
   <node pkg="rviz"
     type="rviz"
     name="rviz"

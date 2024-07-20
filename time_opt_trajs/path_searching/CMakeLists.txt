@@ -43,10 +43,9 @@ include_directories(
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -O3 -Wall")
 
 add_library( path_searching 
-    src/kino_acc_astar.cpp
-    src/kino_jerk_astar.cpp
+    src/kinodynamic_astar.cpp
     )
-target_link_libraries(path_searching
+target_link_libraries( path_searching
     ${catkin_LIBRARIES} 
     )  
 

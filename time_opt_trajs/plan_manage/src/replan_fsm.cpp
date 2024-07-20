@@ -18,8 +18,8 @@ namespace opt_planner
     nh.param("fsm/flight_type", target_type_, -1);
     nh.param("fsm/thresh_replan", replan_thresh_, -1.0);
     nh.param("fsm/thresh_no_replan", no_replan_thresh_, -1.0);
-    nh.param("fsm/emergency_time", emergency_time_, 1.0);
-    nh.param("fsm/thresh_yawing", thresh_yawing_, 3.0);
+    nh.param("fsm/emergency_time_", emergency_time_, 1.0);
+    nh.param("fsm/waypoint_num", waypoint_num_, -1);
 
     if (target_type_ == TARGET_TYPE::PRESET_TARGET)
     {
@@ -55,6 +55,10 @@ namespace opt_planner
 
     //trajectory boardcast
     traj_goal_pub_ = nh.advertise<kr_tracker_msgs::PolyTrackerActionGoal>("tracker_cmd", 10);
+
+
+    // //dodge api
+    // cmd_pub_ = nh.advertise<kr_tracker_msgs::PolyTrackerActionGoal>("tracker_cmd", 10);
 
   }
 
@@ -100,8 +104,7 @@ namespace opt_planner
       end_pt_(0) = waypoints_[current_wp_][0];
       end_pt_(1) = waypoints_[current_wp_][1];
       end_pt_(2) = waypoints_[current_wp_][2];
-      ROS_INFO_STREAM("end_pt_ is : " << end_pt_);
-      planner_manager_->setGlobalGoal(end_pt_);
+      ROS_INFO_STREAM(" end_pt_ is : " << end_pt_);
       current_wp_ += 1;
       if ((end_pt_ - odom_pos_).norm() >= 0.3)
       {
@@ -116,7 +119,6 @@ namespace opt_planner
 
   void ReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
   {
-    odom_time_ = msg->header.stamp >= ros::Time(0) ? msg->header.stamp : ros::Time::now();
     odom_pos_(0) = msg->pose.pose.position.x;
     odom_pos_(1) = msg->pose.pose.position.y;
     odom_pos_(2) = msg->pose.pose.position.z;
@@ -202,15 +204,11 @@ namespace opt_planner
       else
       {
         local_plan_fail_cnt_   = 0;
-        //planner_manager_->setGlobalGoal(end_pt_);
+        setYaw();
 
-        if (setYaw()){
-          changeFSMExecState(INIT_YAW, "FSM");
-          init_yaw_time_ = ros::Time::now();
-        }else{
-          changeFSMExecState(GEN_NEW_TRAJ, "FSM");
-        }
-
+        planner_manager_->setGlobalGoal(end_pt_);
+        changeFSMExecState(INIT_YAW, "FSM");
+        init_yaw_time_ = ros::Time::now();
       }
       break;
     }
@@ -219,10 +217,16 @@ namespace opt_planner
     {
 
       double dyaw = desired_yaw_ - odom_yaw_;
-      
-      yawRange(dyaw);
 
-      if (abs(dyaw) < thresh_yawing_ || (ros::Time::now() - init_yaw_time_).toSec() > 2.0)
+      if (dyaw > M_PI){
+        dyaw = 2 * M_PI - dyaw;
+      }
+      else if (dyaw <= -M_PI)
+      {
+        dyaw = dyaw + 2 * M_PI;
+      }
+
+      if (abs(dyaw) < 0.6 || (ros::Time::now() - init_yaw_time_).toSec() > 2.0)
       {
         changeFSMExecState(GEN_NEW_TRAJ, "FSM");
       }
@@ -239,7 +243,8 @@ namespace opt_planner
       startState << odom_pos_, odom_vel_, Eigen::MatrixXd::Zero(3, 1);
       startYawState  << odom_yaw_, 0.0, 0.0;
 
-      if (planner_manager_->localPlanner(startState, odom_time_))
+      std::cout << "startState  "  << startState << std::endl;
+      if (planner_manager_->localPlanner(startState, startYawState))
       {
         publishTraj();
         changeFSMExecState(EXEC_TRAJ, "FSM");
@@ -262,8 +267,9 @@ namespace opt_planner
     case REPLAN_TRAJ:
     {
 
+
       LocalTrajData *info = &planner_manager_->local_data_;
-      ros::Time time_now = odom_time_;
+      ros::Time time_now = ros::Time::now();
       double t_cur = (time_now - info->start_time_).toSec();
 
       Eigen::MatrixXd startState(3, 3);
@@ -273,7 +279,7 @@ namespace opt_planner
       //startYawState  << info->traj_.getYaw(t_cur), info->traj_.getdYaw(t_cur);
       startYawState  << odom_yaw_, 0.0, 0.0;
 
-      if (planner_manager_->localPlanner(startState, time_now))
+      if (planner_manager_->localPlanner(startState, startYawState))
       {
         publishTraj();
         changeFSMExecState(EXEC_TRAJ, "FSM");
@@ -305,10 +311,10 @@ namespace opt_planner
         changeFSMExecState(WAIT_TARGET, "FSM");
 
       }
-      else if((end_pt_ - pos).norm() < no_replan_thresh_){
+      // else if((end_pt_ - pos).norm() < no_replan_thresh_){
 
-      }
-      else if (t_cur > replan_thresh_ )
+      // }
+      else if (t_cur > 2.0)
       {
         cout << "[FSM] from exec to replan t_cur " << t_cur << endl;
         changeFSMExecState(REPLAN_TRAJ, "FSM");
@@ -473,7 +479,7 @@ namespace opt_planner
   }
 
 
-  bool ReplanFSM::setYaw()
+  void ReplanFSM::setYaw()
   {
 
     Eigen::Vector3d dir = end_pt_ - odom_pos_;
@@ -483,13 +489,6 @@ namespace opt_planner
     std::cout<< "desired_yaw_  is " << desired_yaw_  << std::endl;
     std::cout<< "odom_yaw_  is " << odom_yaw_  << std::endl;
 
-    double dyaw = desired_yaw_ - odom_yaw_;
-    
-    yawRange(dyaw);
-
-    if (abs(dyaw) < thresh_yawing_){
-      return false;
-    }
 
     //yaw_msg.goal.frame_id = frame_id_;
     yaw_msg.goal.final_yaw = desired_yaw_;
@@ -498,7 +497,6 @@ namespace opt_planner
 
     std_srvs::Trigger trg;
     ros::service::call(poly_srv_name_, trg);
-    return true;
 
   }
 

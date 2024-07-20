@@ -1,0 +1,142 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="world_frame_id" default="world"/>
+  <arg name="mav_name" default="quadrotor"/>
+  <arg name="mav_id" default="1"/> <!-- id should be greater than 0-->
+  <!-- random map -->
+  <arg name="global_map_topic" default="/global_cloud"/>
+
+  <arg name="map_size_x" value="100.0"/>
+  <arg name="map_size_y" value="20.0"/>
+  <arg name="map_size_z" value=" 10.0"/>
+
+  <arg name="map_origin_x" value="-20.0"/>
+  <arg name="map_origin_y" value="-10"/>
+  <arg name="map_origin_z" value="0.05"/>
+
+  <arg name="color/r" value="0.0"/>
+  <arg name="color/g" value="0.0"/>
+  <arg name="color/b" value="1.0"/>
+  <arg name="color/a" value="0.7"/>
+
+  <arg name="ego_radius" default="0.25"/>
+  <arg name="ego_height"  default="0.0425"/>
+
+
+  <arg name="odom_topic" default="/$(arg mav_name)/dodgeros_pilot/groundtruth/odometry"/>
+  <arg name="obstacles_topic" default="/$(arg mav_name)/dodgeros_pilot/groundtruth/obstacles"/>
+
+  <arg name="initial_offset/x" default="0.0"/>
+  <arg name="initial_offset/y" default="0.0"/>
+  
+
+  <!-- main algorithm params -->
+  <include file="$(find plan_manage)/launch/advanced_param.xml">
+    <arg name="frame_id"    value="$(arg world_frame_id)"/>
+    <arg name="mav_id"      value="$(arg mav_id)"/>
+    <arg name="map_size_x_" value="$(arg map_size_x)"/>
+    <arg name="map_size_y_" value="$(arg map_size_y)"/>
+    <arg name="map_size_z_" value="$(arg map_size_z)"/>
+
+    <arg name="map_origin_x" value="$(arg map_origin_x)"/>
+    <arg name="map_origin_y" value="$(arg map_origin_y)"/>
+    <arg name="map_origin_z" value="$(arg map_origin_z)"/>
+
+    <arg name="ego_radius"  value="$(arg ego_radius)"/>
+    <arg name="ego_height"  value="$(arg ego_height)"/>
+
+    <arg name="color/r" value="$(arg color/r)"/>
+    <arg name="color/g" value="$(arg color/g)"/>
+    <arg name="color/b" value="$(arg color/b)"/>
+
+    <arg name="initial_offset/x" value="$(arg initial_offset/x)"/>
+    <arg name="initial_offset/y" value="$(arg initial_offset/y)"/>
+
+    <!-- ensure the following topics are matched-->
+    <arg name="odom_topic"  value="$(arg odom_topic)"/>
+    <arg name="obstacles_topic"  value="$(arg obstacles_topic)"/>
+
+    <arg name="waypoints_topic" value="/$(arg mav_name)/waypoint_generator/waypoints"/>
+    <arg name="tracker_topic"   value="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
+    <arg name="poly_srv_name"   value="/$(arg mav_name)/mav_services/poly_tracker"/>
+
+    <!-- don't set cloud_topic if you already set these ones! -->
+    <arg name="camera_pose_topic" value="/no_pose_notopic"/>
+    <arg name="depth_topic" value="/no_depth_topic"/>
+
+    <!-- topic of point cloud measurement, such as from LIDAR  -->
+    <!-- don't set camera pose and depth, if you already set this one! -->
+    <arg name="cloud_topic" value="/no_cloud_topic"/>
+
+    <!-- intrinsic params of the depth camera -->
+    <arg name="cx" value="160.0"/>
+    <arg name="cy" value="120.0"/>
+    <arg name="fx" value="143.0"/>
+    <arg name="fy" value="143.0"/>
+
+    <!-- extrinsic params of the depth camera-->
+    <arg name="off_x" value="0.0"/>
+    <arg name="off_y" value="0.0"/>
+    <arg name="off_z" value="0.3"/>
+
+    <arg name="qx" value="0.5"/>
+    <arg name="qy" value="-0.5"/>
+    <arg name="qz" value="0.5"/>
+    <arg name="qw" value="-0.5"/>
+
+    <!-- maximum velocity and acceleration the drone will reach, box but the total value -->
+    <arg name="max_vel"   value="2.0" />
+    <arg name="max_acc"   value="3.0" />
+    <arg name="max_jerk"  value="4.0" />
+
+    <arg name="search/max_tau"    value="0.5" />
+
+    <!--always set to 1.5 times grater than sensing horizon-->
+    <arg name="planning_horizon" value="15.0" /> 
+
+    <!-- 1: use 2D Nav Goal to select goal  -->
+    <!-- 2: use global waypoints below  -->
+    <arg name="flight_type" value="1" />
+    
+    <!-- global waypoints -->
+    <!-- If flight_type is set to 2, the drone will travel these waypoints one by one -->
+    <arg name="point_num" value="2" />
+
+    <arg name="point0_x" value="19.0" />
+    <arg name="point0_y" value="0.0" />
+    <arg name="point0_z" value="1.0" />
+
+    <!-- set more waypoints if you need -->
+    <arg name="point1_x" value="-19.0" />
+    <arg name="point1_y" value="0.0" />
+    <arg name="point1_z" value="1.0" />
+
+    <arg name="point2_x" value="0.0" />
+    <arg name="point2_y" value="19.0" />
+    <arg name="point2_z" value="1.0" />
+    
+  </include>
+
+
+  <node pkg="odom_visualization" name="odom_visualization" type="odom_visualization" output="screen">
+        <remap from="~odom" to="$(arg odom_topic)"/>
+        <param name="color/r" value="$(arg color/r)"/>    
+        <param name="color/g" value="$(arg color/g)"/>        
+        <param name="color/b" value="$(arg color/b)"/>        
+        <param name="color/a" value="1.0"/>       
+        <param name="covariance_scale" value="100.0"/>       
+        <param name="robot_scale" value="1.0"/>
+        <param name="frame_id" value ="$(arg world_frame_id)"/>
+  </node>
+
+  <node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="screen">
+    <remap from="~odom" to="$(arg odom_topic)"/>        
+    <remap from="~goal" to="/move_base_simple/goal"/>
+    <remap from="~traj_start_trigger" to="/traj_start_trigger" />
+    <param name="waypoint_type" value="manual-lonely-waypoint"/>    
+  </node>
+
+
+
+</launch>

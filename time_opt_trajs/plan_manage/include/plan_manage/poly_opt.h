@@ -37,12 +37,28 @@ namespace opt_planner
                               const int n);
 
     inline void init(Eigen::VectorXd wts, 
-                     Eigen::VectorXd bds){
+                     Eigen::VectorXd bds,
+                     int ego_id,
+                     double ego_radius,
+                     double multi_clear){
+      ego_id_ = ego_id;
+      ego_radius_ = ego_radius;
       w_ = wts;
       // w_time_,  w_vel_,  w_acc_,  w_sta_obs_
-      b_ =  bds;
+      b_ =  0.8 * bds;
       bb_ = 0.3 * bds;
       jerkOpt_.setWeights(w_, b_);
+
+      safe_clearance_ = multi_clear;
+
+      shp_n_ << 0,  0,  1,  
+                0,  0, -1,
+                0,  1,  0, 
+                0, -1,  0,
+                1,  0,  0,  
+               -1,  0,  0;
+
+
     }
 
     void getTraj(min_jerk::Trajectory &traj){traj = minJerkTraj_;}
@@ -55,6 +71,11 @@ namespace opt_planner
     std::vector<Eigen::MatrixXd> SFCs_;
     int iter_num_, piece_num_, var_num_, ego_id_;
     Eigen::VectorXd w_, b_, bb_;
+    double ego_radius_;
+    double safe_clearance_ = 0.3;
+    Eigen::Matrix<double,6,3> shp_n_;
+ 
+  
 
     /*** feasibility checking ***/
     enum CHECKER_TYPE

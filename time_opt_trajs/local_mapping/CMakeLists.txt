@@ -13,10 +13,10 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  sensor_msgs
   visualization_msgs
   cv_bridge
   message_filters
+  envsim_msgs
 )
 
 find_package(Eigen3 REQUIRED)
@@ -25,7 +25,7 @@ find_package(PCL 1.7 REQUIRED)
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES local_mapping
- CATKIN_DEPENDS roscpp std_msgs
+ CATKIN_DEPENDS roscpp std_msgs envsim_msgs
  DEPENDS OpenCV
 #  DEPENDS system_lib
 )

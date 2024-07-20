@@ -28,18 +28,20 @@ namespace opt_planner
     nh.param("max_jerk",  pp_.max_jerk_, -1.0);
 
     nh.param("plan_frame_id", frame_id_, std::string("world"));
+    nh.param("ego_radius", pp_.mav_radius_, 0.27);
+    nh.param("multi_clearance_range", pp_.multi_clearance_range_, 0.2);
+    nh.param("mav_id", pp_.mav_id_, 0);
 
     /* optimization parameters */
     nh.param("optimization/bb_back", bb_back_, 0.5);
     
     Eigen::VectorXd w_total(4), b_total(2);
+
     nh.param("optimization/w_time", w_total(0), 32.0);
     nh.param("optimization/w_vel", w_total(1), 128.0);
     nh.param("optimization/w_acc", w_total(2), 128.0);
     nh.param("optimization/w_sta_obs", w_total(3), 128.0);
-    nh.param("search/horizon", local_plan_horizon_, 7.0);
-    nh.param("search/use_jerk", use_jerk_, false);
-
+    nh.param("search/horizon", local_plan_horizon_, 7.5);
 
     b_total << pp_.max_vel_, pp_.max_acc_;
 
@@ -59,28 +61,23 @@ namespace opt_planner
 
 
     /*  local planner intial  */
-    if(use_jerk_)
-    {
-      kinojerk_path_finder_.reset(new KinoJerkAstar);
-      kinojerk_path_finder_->setParam(nh);
-      kinojerk_path_finder_->init();
-      kinojerk_path_finder_->intialMap(grid_map_);
-    }else{
-      kinoacc_path_finder_.reset(new KinoAccAstar);
-      kinoacc_path_finder_->setParam(nh);
-      kinoacc_path_finder_->init();
-      kinoacc_path_finder_->intialMap(grid_map_);
-    }
+    kino_path_finder_.reset(new KinodynamicAstar);
+    kino_path_finder_->setParam(nh);
+    kino_path_finder_->init(pp_.mav_id_, pp_.mav_radius_);
+    kino_path_finder_->intialMap(grid_map_);
 
     /*  visualization intial  */
     visualization_ = vis;
 
     /*  solver intial  */
-    poly_traj_solver_.init(w_total, b_total);
+    poly_traj_solver_.init(w_total, b_total, pp_.mav_id_, pp_.mav_radius_, pp_.multi_clearance_range_);
 
+   
     std::cout << "[PlannerManager]: initPlanModules success!" << std::endl;
 
+
     poly_pub_ = nh.advertise<decomp_ros_msgs::PolyhedronArray>("sikangpolyhedron", 1, true);
+
 
   }
 
@@ -89,11 +86,11 @@ namespace opt_planner
   //*************************************local primitives*****************************************//
   //***********************************************************************************************//
   //***********************************************************************************************//
-  bool PlannerManager::localPlanner(Eigen::MatrixXd &startState,
-                                    ros::Time &time_now)
+  bool PlannerManager::localPlanner(Eigen::MatrixXd &startState, 
+                                    Eigen::Vector3d &yawStartState)
   { // 3 * 3  [pos, vel, acc]
     // end State could be obtained from previous planned trajs
-    Eigen::MatrixXd endState(3,3); // include the start and end state
+    Eigen::MatrixXd endState(3,3), yawState(2,3); // include the start and end state
     Eigen::Vector3d local_target;
     Eigen::MatrixXd inner_pts; // (4, N -1)
     Eigen::VectorXd allo_ts;
@@ -111,6 +108,7 @@ namespace opt_planner
 
       local_target = startState.col(0) + (local_plan_horizon_ / dist)  * (global_end_pt_ - startState.col(0));
     }
+
     
     visualization_->displayGoalPoint(local_target, Eigen::Vector4d(1, 0, 0, 1), 0.3, 0);
  
@@ -120,33 +118,17 @@ namespace opt_planner
       endState << local_target, Eigen::MatrixXd::Zero(3, 1), Eigen::MatrixXd::Zero(3, 1);
     }
     else{
-      endState << local_target, local_data_.traj_.getVel(local_data_.duration_), local_data_.traj_.getAcc(local_data_.duration_);
+      endState << local_target, local_data_.traj_.getVel(local_data_.duration_), Eigen::MatrixXd::Zero(3, 1);
     }
 
-    std::cout << "[localPlanner]: startState is " << startState << std::endl;
-    std::cout << "[localPlanner]: endState is " <<  endState << std::endl;
-
+    ros::Time time_now = ros::Time::now();
 
     //step two: kinodynamic path searching considering obstacles avoidance
-    if (use_jerk_){
-
-      if (!kinoPlan(startState, endState, time_now, path_pts, kinojerk_path_finder_))
-      {
-        std::cout << "[localPlanner]: kinodynamic search fails!" << std::endl;
-        return false;
-      }
-
-    }else{
-
-      if (!kinoPlan(startState, endState, time_now, path_pts, kinoacc_path_finder_))
-      {
-        std::cout << "[localPlanner]: kinodynamic search fails!" << std::endl;
-        return false;
-      }
-
+    if (!kinoPlan(startState, endState, time_now, path_pts))
+    {
+      std::cout << "[localPlanner]: kinodynamic search fails!" << std::endl;
+      return false;
     }
-
-   std::cout << "[localPlanner]: corridor generation..." << std::endl;
 
     //step three: generating corridor
     if (!getSikangConst(path_pts, inner_pts, allo_ts, hPolys))
@@ -154,8 +136,7 @@ namespace opt_planner
       std::cout << "[localPlanner]: corridor generation fails!" << std::endl;
       return false;
     }
-    std::cout << "[localPlanner]: optimization..." << std::endl;
-
+ 
 
     //step four: unconstrained optimziation
     if (!poly_traj_solver_.minJerkTrajOpt(inner_pts, 
@@ -185,27 +166,27 @@ namespace opt_planner
   }
 
 
+
+
   // use kinodynamic a* to generate a path and get hpoly
-  template <typename T>
   bool PlannerManager::kinoPlan(Eigen::MatrixXd &startState,
                                 Eigen::MatrixXd &endState,
                                 ros::Time plan_time,
-                                std::vector<Eigen::Vector3d> &kino_path,
-                                T &finder)
+                                std::vector<Eigen::Vector3d> &kino_path)
   {
     
     kino_path.clear();
-    finder->reset();
+    kino_path_finder_->reset();
 
-    int status = finder->search(startState, endState, plan_time, false);
+    int status = kino_path_finder_->search(startState, endState, plan_time, false);
 
-    if (status == KINO_SEARCH_RESULT::NO_PATH)
+    if (status == KinodynamicAstar::NO_PATH)
     {
       std::cout << "[kino replan]: kinodynamic search fail!" << std::endl;
       // retry searching with discontinuous initial state
-      finder->reset();
-      status = finder->search(startState, endState, plan_time, false);
-      if (status == KINO_SEARCH_RESULT::NO_PATH)
+      kino_path_finder_->reset();
+      status = kino_path_finder_->search(startState, endState, plan_time, false);
+      if (status == KinodynamicAstar::NO_PATH)
       {
         std::cout << "[kino replan]: Can't find path." << std::endl;
         return false;
@@ -219,8 +200,10 @@ namespace opt_planner
     {
       std::cout << "[kino replan]: kinodynamic search success." << std::endl;
     }
-    finder->getKinoTraj(time_res_, kino_path);
-    //endState.col(0) = kino_path.back();
+
+    kino_path_finder_->getKinoTraj(time_res_, kino_path);
+    endState.col(0) = kino_path.back();
+    
     visualization_->displayKinoAStarList(kino_path, display_color_, 0);
     return true;
   }
@@ -239,6 +222,7 @@ namespace opt_planner
     std::vector<Eigen::Vector3d> temp_pts;
     std::vector<double> temp_ts;
     
+
     //setup the pointcloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
     grid_map_->getPointCloud(cloud_ptr);
@@ -251,7 +235,7 @@ namespace opt_planner
       vec_obs[i](2) = cloud_ptr->points[i].z;
     }
 
-   
+    
     decomp_util_.set_obs(vec_obs);
     decomp_util_.set_local_bbox(Vec3f(2.0, 2.0, 1), Vec3f(bb_back_, 2.0, 1));
 
@@ -260,14 +244,13 @@ namespace opt_planner
     Eigen::Vector3d q;
     int query_index, cnt_num = 0;
     
-    Eigen::Vector3d end_point = path_pts.back() + 0.1 * ( path_pts.back() -  path_pts[path_size-1]);
-    path_pts.push_back(end_point);
+    std::cout << "the path_size is " << path_size << std::endl;
 
     // step 1 : set the intial lengh
     // add start time
     temp_ts.push_back(0.0);
 
-    for (size_t i = 0; i < path_size; i++)
+    for (size_t i = 0; i < path_size-1; i++)
     {
       query_index = i;
       // check wehter or not we need to generate the point
