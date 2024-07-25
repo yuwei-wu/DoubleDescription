@@ -7,7 +7,7 @@ This is the trajectory generator for DodgeDrone Competition
 1. clone and complie the kr mav control and this repo within the same workspace (src) of the agile flight.
 
 ```
-git clone -b opt_dodge git@github.com:yuwei-wu/kr_mav_control.git
+git clone -b poly git@github.com:yuwei-wu/kr_mav_control.git
 git clone git@github.com:yuwei-wu/time_opt_trajs.git
 ```
 
