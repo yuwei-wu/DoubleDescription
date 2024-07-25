@@ -2,18 +2,18 @@
 <launch>
 
   <arg name="world_frame_id" default="world"/>
-  <arg name="mav_name" default="quadrotor"/>
+  <arg name="mav_name" default="kingfisher"/>
   <arg name="mav_id" default="1"/> <!-- id should be greater than 0-->
   <!-- random map -->
   <arg name="global_map_topic" default="/global_cloud"/>
 
-  <arg name="map_size_x" value="100.0"/>
+  <arg name="map_size_x" value="120.0"/>
   <arg name="map_size_y" value="20.0"/>
   <arg name="map_size_z" value=" 10.0"/>
 
   <arg name="map_origin_x" value="-20.0"/>
   <arg name="map_origin_y" value="-10"/>
-  <arg name="map_origin_z" value="0.05"/>
+  <arg name="map_origin_z" value="-1"/>
 
   <arg name="color/r" value="0.0"/>
   <arg name="color/g" value="0.0"/>
@@ -23,10 +23,9 @@
   <arg name="ego_radius" default="0.25"/>
   <arg name="ego_height"  default="0.0425"/>
 
-
   <arg name="odom_topic" default="/$(arg mav_name)/dodgeros_pilot/groundtruth/odometry"/>
-  <arg name="obstacles_topic" default="/$(arg mav_name)/dodgeros_pilot/groundtruth/obstacles"/>
-
+  <!-- <arg name="obstacles_topic" default="/$(arg mav_name)/dodgeros_pilot/groundtruth/obstacles"/> -->
+  <arg name="obstacles_topic" default="no_groud_truth_obstacles"/>
   <arg name="initial_offset/x" default="0.0"/>
   <arg name="initial_offset/y" default="0.0"/>
   
@@ -62,8 +61,8 @@
     <arg name="poly_srv_name"   value="/$(arg mav_name)/mav_services/poly_tracker"/>
 
     <!-- don't set cloud_topic if you already set these ones! -->
-    <arg name="camera_pose_topic" value="/no_pose_notopic"/>
-    <arg name="depth_topic" value="/no_depth_topic"/>
+    <arg name="camera_pose_topic" value="/$(arg mav_name)/dodgeros_pilot/groundtruth/odometry"/>
+    <arg name="depth_topic" value="/$(arg mav_name)/dodgeros_pilot/unity/depth"/>
 
     <!-- topic of point cloud measurement, such as from LIDAR  -->
     <!-- don't set camera pose and depth, if you already set this one! -->
@@ -80,14 +79,18 @@
     <arg name="off_y" value="0.0"/>
     <arg name="off_z" value="0.3"/>
 
-    <arg name="qx" value="0.5"/>
+    <!-- <arg name="qx" value="0.5"/>
     <arg name="qy" value="-0.5"/>
     <arg name="qz" value="0.5"/>
-    <arg name="qw" value="-0.5"/>
+    <arg name="qw" value="-0.5"/> -->
+    <arg name="qx" value="0.0"/>
+    <arg name="qy" value="0.0"/>
+    <arg name="qz" value="-0.7071068"/>
+    <arg name="qw" value="0.7071068"/> 
 
     <!-- maximum velocity and acceleration the drone will reach, box but the total value -->
-    <arg name="max_vel"   value="2.0" />
-    <arg name="max_acc"   value="3.0" />
+    <arg name="max_vel"   value="4.0" />
+    <arg name="max_acc"   value="6.0" />
     <arg name="max_jerk"  value="4.0" />
 
     <arg name="search/max_tau"    value="0.5" />

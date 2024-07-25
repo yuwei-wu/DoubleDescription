@@ -199,12 +199,19 @@ namespace opt_planner
 
     case WAIT_TARGET:
     {
+      //std::cout << "-----------------WAIT_TARGET" << std::endl;
       if (!have_target_)
+      {
+        //std::cout << "no target, odom is " << odom_pos_ << std::endl;
         return;
+      }
       else
       {
+        std::cout << "have target" << std::endl;
         local_plan_fail_cnt_   = 0;
+        std::cout << "setYaw" << std::endl;
         setYaw();
+        
 
         planner_manager_->setGlobalGoal(end_pt_);
         changeFSMExecState(INIT_YAW, "FSM");
@@ -441,34 +448,30 @@ namespace opt_planner
 
     //traj_act_msg.goal.frame_id = frame_id_;
     traj_act_msg.goal.order = order;
+    traj_act_msg.goal.set_yaw = false;
+
 
     Eigen::VectorXd durs = info->traj_.getDurations();
     int piece_num = info->traj_.getPieceNum();
 
-    traj_act_msg.goal.start_time = info->start_time_;
+    traj_act_msg.goal.t_start = info->start_time_;
+    traj_act_msg.goal.seg_x.resize(piece_num);
+    traj_act_msg.goal.seg_y.resize(piece_num);
+    traj_act_msg.goal.seg_z.resize(piece_num);
 
-    traj_act_msg.goal.duration.resize(piece_num);
-    traj_act_msg.goal.bound_x.resize((order + 1) * piece_num);
-    traj_act_msg.goal.bound_y.resize((order + 1) * piece_num);
-    traj_act_msg.goal.bound_z.resize((order + 1) * piece_num);
 
     for (int i = 0; i < piece_num; ++i)
     {
-      traj_act_msg.goal.duration[i] = durs(i);
+      auto coeff = info->traj_[i].getNormalizedCoeffMat();
 
-      min_jerk::BoundaryCond bCond = info->traj_[i].getBoundCond();
-
-      bCond.col(0) -= initial_offset_;
-      bCond.col(3) -= initial_offset_;
-      /////return the odom frame, should deduce the offset!!!!! /tm
-
-      int i6 = i * (order + 1);
-      for (int j = 0; j < (order + 1); j++)
-      {
-        traj_act_msg.goal.bound_x[i6 + j] = bCond(0, j);
-        traj_act_msg.goal.bound_y[i6 + j] = bCond(1, j);
-        traj_act_msg.goal.bound_z[i6 + j] = bCond(2, j);
+      for (uint c = 0; c <= order; c++) {
+        traj_act_msg.goal.seg_x[i].coeffs.push_back(coeff(0,order-c));
+        traj_act_msg.goal.seg_y[i].coeffs.push_back(coeff(1,order-c));
+        traj_act_msg.goal.seg_z[i].coeffs.push_back(coeff(2,order-c));
       }
+      traj_act_msg.goal.seg_x[i].dt = durs[i];
+      traj_act_msg.goal.seg_x[i].degree = order;
+
     }
     
     traj_goal_pub_.publish(traj_act_msg);
