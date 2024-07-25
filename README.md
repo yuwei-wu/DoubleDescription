@@ -8,7 +8,7 @@ This is the trajectory generator for DodgeDrone Competition
 
 ```
 git clone -b poly git@github.com:yuwei-wu/kr_mav_control.git
-git clone git@github.com:yuwei-wu/time_opt_trajs.git
+git clone -b dodge git@github.com:yuwei-wu/DoubleDescription.git
 ```
 
 2. run the code 
