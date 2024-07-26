@@ -69,10 +69,12 @@
     <arg name="cloud_topic" value="/no_cloud_topic"/>
 
     <!-- intrinsic params of the depth camera -->
-    <arg name="cx" value="160.0"/>
-    <arg name="cy" value="120.0"/>
-    <arg name="fx" value="143.0"/>
-    <arg name="fy" value="143.0"/>
+    <arg name="cx" value="320.0"/>
+    <arg name="cy" value="240.0"/>
+    <arg name="fx" value="201.680672269"/>
+    <arg name="fy" value="201.680672269"/>
+    <!-- <arg name="fx" value="268.51"/>
+    <arg name="fy" value="268.51"/> -->
 
     <!-- extrinsic params of the depth camera-->
     <arg name="off_x" value="0.0"/>

@@ -126,14 +126,18 @@ void GridMap::initMap(ros::NodeHandle &nh)
   //                  0.0, 1.0, 0.0, camera_offset(1),
   //                  0.0, 0.0, 1.0, camera_offset(2),
   //                  0.0, 0.0, 0.0, 1.0;
-  md_.cam2body_ = Eigen::MatrixXd::Identity(4, 4);
-  md_.cam2body_.block<3, 3>(0, 0) = camera_q.toRotationMatrix();
-  md_.cam2body_(0, 3) = camera_offset(0);
-  md_.cam2body_(1, 3) = camera_offset(1);
-  md_.cam2body_(2, 3) = camera_offset(2);
-  md_.cam2body_(3, 3) = 1.0;
+  // md_.cam2body_ = Eigen::MatrixXd::Identity(4, 4);
+  // md_.cam2body_.block<3, 3>(0, 0) = camera_q.toRotationMatrix();
+  // md_.cam2body_(0, 3) = camera_offset(0);
+  // md_.cam2body_(1, 3) = camera_offset(1);
+  // md_.cam2body_(2, 3) = camera_offset(2);
+  // md_.cam2body_(3, 3) = 1.0;
+  md_.cam2body_ << 0.0, 0.0, 1.0, 0.0,
+                  -1.0, 0.0, 0.0, 0.0,
+                  0.0, -1.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 1.0;
   
-  std::cout << "camera_q " << camera_q << std::endl;
+  // std::cout << "camera_q " << camera_q << std::endl;
   //print  md_.cam2body_
   std::cout << "md_.cam2body_ is " << md_.cam2body_ << std::endl;
 
@@ -1307,7 +1311,7 @@ void GridMap::depthOdomCallback(const sensor_msgs::ImageConstPtr &img,
 
   if (img->encoding == sensor_msgs::image_encodings::TYPE_32FC1)
   {
-    (cv_ptr->image).convertTo(cv_ptr->image, CV_16UC1, mp_.k_depth_scaling_factor_);
+    (cv_ptr->image).convertTo(cv_ptr->image, CV_16UC1, 1000.0);
   }
   cv_ptr->image.copyTo(md_.depth_image_);
 

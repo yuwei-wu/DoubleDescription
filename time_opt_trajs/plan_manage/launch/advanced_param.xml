@@ -156,12 +156,12 @@
     <param name="grid_map/qw" value="$(arg qw)"/>
 
     <!-- depth filter -->
-    <param name="grid_map/use_depth_filter" value="true"/>
+    <param name="grid_map/use_depth_filter" value="false"/>
     <param name="grid_map/depth_filter_tolerance" value="0.15"/>
     <param name="grid_map/depth_filter_maxdist"   value="5.0"/>
     <param name="grid_map/depth_filter_mindist"   value="0.2"/>
     <param name="grid_map/depth_filter_margin"    value="2"/>
-    <param name="grid_map/k_depth_scaling_factor" value="1000.0"/>
+    <param name="grid_map/k_depth_scaling_factor" value="10"/>
     <param name="grid_map/skip_pixel" value="1"/>
     <!-- local fusion -->
     <param name="grid_map/p_hit"  value="0.65"/>
@@ -170,7 +170,7 @@
     <param name="grid_map/p_max"  value="0.90"/>
     <param name="grid_map/p_occ"  value="0.70"/>
     <param name="grid_map/min_ray_length" value="0.5"/>
-    <param name="grid_map/max_ray_length" value="5.0"/>
+    <param name="grid_map/max_ray_length" value="10.0"/>
 
     <param name="grid_map/virtual_ceil_height"   value="100.0"/>
     <param name="grid_map/visualization_truncate_height"   value="90"/>
