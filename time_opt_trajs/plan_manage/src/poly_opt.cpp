@@ -22,8 +22,8 @@ namespace opt_planner
 
     setInit();
     // ROS_WARN("PolySolver::minJerkTrajOpt");
-    // ROS_INFO_STREAM("innerP " << innerP_);
-    // ROS_INFO_STREAM("alloT " << alloT_);
+    //ROS_INFO_STREAM("innerP " << innerP_);
+    //ROS_INFO_STREAM("alloT " << alloT_);
     // ROS_INFO_STREAM("THE initS_  " << initS_);
     // ROS_INFO_STREAM("THE finalS_ " << finalS_);
 
@@ -102,9 +102,6 @@ namespace opt_planner
       }
       else
       {
-
-      
-
         if (checker == CHECKER_TYPE::FEASIBLE)
         {
           printf("\033[32m Feasible solution: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
@@ -112,12 +109,12 @@ namespace opt_planner
         }
         else
         {
+          printf("\033[34m  fails: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
           refineInit(checker);
           setInit();
         }
         fail_num++;
-        printf("\033[34m  fails: iter=%d, time(ms)=%5.3f, cost=%5.3f\n\033[0m", iter_num_, time_ms, final_cost);
-        ROS_WARN("Solver error. Return = %d, %s. Skip this planning.", result, lbfgs::lbfgs_strerror(result));
+                //ROS_WARN("Solver error. Return = %d, %s. Skip this planning.", result, lbfgs::lbfgs_strerror(result));
       }
     //std::cout << "+++++++++++++++++++++++++++++++  " << std::endl;
     } while (is_success == false && infeasible_num < 3 && fail_num < 3);
@@ -170,12 +167,11 @@ namespace opt_planner
   {
 
     // refine the trajectory
-    std::cout << "[PolySolver::refineInit]" << std::endl;
+    //std::cout << "[PolySolver::refineInit]" << std::endl;
     std::vector<int> idxs;
 
     switch (checker)
     {
-
       case CHECKER_TYPE::VEL_INFI:
       {
 
@@ -193,7 +189,6 @@ namespace opt_planner
       }
       case CHECKER_TYPE::STA_INFI:
       {
-
         locateViolateStb(idxs);
         splitSegments(idxs, 1.0);
         w_(2) *= t_coeff_;

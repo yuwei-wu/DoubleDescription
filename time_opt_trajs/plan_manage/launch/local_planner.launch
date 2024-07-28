@@ -7,7 +7,7 @@
   <!-- random map -->
   <arg name="global_map_topic" default="/global_cloud"/>
 
-  <arg name="map_size_x" value="120.0"/>
+  <arg name="map_size_x" value="100.0"/>
   <arg name="map_size_y" value="20.0"/>
   <arg name="map_size_z" value=" 10.0"/>
 
@@ -55,6 +55,7 @@
     <!-- ensure the following topics are matched-->
     <arg name="odom_topic"  value="$(arg odom_topic)"/>
     <arg name="obstacles_topic"  value="$(arg obstacles_topic)"/>
+    <arg name="trigger_topic" value="/$(arg mav_name)/start_bench"/>
 
     <arg name="waypoints_topic" value="/$(arg mav_name)/waypoint_generator/waypoints"/>
     <arg name="tracker_topic"   value="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
@@ -93,7 +94,7 @@
     <!-- maximum velocity and acceleration the drone will reach, box but the total value -->
     <arg name="max_vel"   value="4.0" />
     <arg name="max_acc"   value="6.0" />
-    <arg name="max_jerk"  value="4.0" />
+    <arg name="max_jerk"  value="6.0" />
 
     <arg name="search/max_tau"    value="0.5" />
 

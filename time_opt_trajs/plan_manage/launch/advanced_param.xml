@@ -36,8 +36,10 @@
   <arg name="depth_topic"/>
   <arg name="cloud_topic"/>
   <arg name="obstacles_topic"/>
+  <arg name="trigger_topic"/>
   <arg name="tracker_topic"/>
   <arg name="poly_srv_name"/>
+
 
   <!-- camera parameters -->
   <arg name="cx"/>
@@ -89,9 +91,11 @@
     <param name="initial_offset/y"  value="$(arg initial_offset/y)"/>
     <param name="poly_srv_name"     value="$(arg poly_srv_name)"/>
 
-    <remap from="~odom_world" to="$(arg odom_topic)"/>
-    <remap from="~waypoints"  to="$(arg waypoints_topic)"/>
+    <remap from="~odom_world"   to="$(arg odom_topic)"/>
+    <remap from="~waypoints"    to="$(arg waypoints_topic)"/>
     <remap from="~tracker_cmd"  to="$(arg tracker_topic)"/>
+    <remap from="~trigger"      to="$(arg trigger_topic)"/>
+    <param name="forward_dist"  value="80.0" type="double"/>
 
     <!-- used for occ map -->
     <remap from ="~grid_map_cloud" to="$(arg cloud_topic)"/>

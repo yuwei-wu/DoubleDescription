@@ -83,7 +83,7 @@ namespace opt_planner
     /* ROS utils */
     ros::NodeHandle node_;
     ros::Timer exec_timer_, safety_timer_;
-    ros::Subscriber waypoint_sub_, odom_sub_;
+    ros::Subscriber waypoint_sub_, odom_sub_, trigger_sub_;
     ros::Publisher replan_pub_, new_pub_, traj_goal_pub_;
 
     /* helper functions */
@@ -96,6 +96,9 @@ namespace opt_planner
     void printFSMExecState();
 
     //@yuwei
+    void triggerCallback(const std_msgs::EmptyConstPtr &msg);
+    double forward_dist_, max_forward_dist_;
+
     bool setGoal();
     double desired_yaw_;
     void setYaw();

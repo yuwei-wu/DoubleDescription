@@ -55,7 +55,10 @@ namespace opt_planner
     Eigen::Vector3d map_origin, map_size;
     grid_map_->getRegion(map_origin, map_size);
 
-    std::cout << "[PlannerManager]: map_origin is " << map_origin << "   map_size is " << map_size << std::endl;
+    std::cout << "[PlannerManager]: map_origin is " 
+              << map_origin.transpose()
+              << "   map_size is " 
+              << map_size.transpose() << std::endl;
 
     decomp_util_.set_global_bbox(Vec3f(map_origin(0), map_origin(1), map_origin(2)), Vec3f(map_size(0), map_size(1), map_size(2)));
 
@@ -111,8 +114,11 @@ namespace opt_planner
 
     
     visualization_->displayGoalPoint(local_target, Eigen::Vector4d(1, 0, 0, 1), 0.3, 0);
- 
-    std::cout << "[localPlanner]: local_target is " <<  local_target << std::endl;
+    
+    std::cout << "[localPlanner]: start_pos is " 
+              <<  startState.col(0).transpose() 
+              << " local_target is " 
+              <<  local_target.transpose() << std::endl;
     
     if (!have_opt_path_ || dist < (pp_.max_vel_ * pp_.max_vel_) / (2 * pp_.max_acc_)){
       endState << local_target, Eigen::MatrixXd::Zero(3, 1), Eigen::MatrixXd::Zero(3, 1);
@@ -129,7 +135,7 @@ namespace opt_planner
       std::cout << "[localPlanner]: kinodynamic search fails!" << std::endl;
       return false;
     }
-
+    
     //step three: generating corridor
     if (!getSikangConst(path_pts, inner_pts, allo_ts, hPolys))
     {
@@ -203,6 +209,8 @@ namespace opt_planner
 
     kino_path_finder_->getKinoTraj(time_res_, kino_path);
     endState.col(0) = kino_path.back();
+
+    std::cout << "[kino replan]: path size is " << kino_path.size() << std::endl;
     
     visualization_->displayKinoAStarList(kino_path, display_color_, 0);
     return true;
@@ -227,6 +235,12 @@ namespace opt_planner
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
     grid_map_->getPointCloud(cloud_ptr);
 
+    if (cloud_ptr->points.size() == 0)
+    {
+      std::cout << "[getSikangConst]: no pointcloud!" << std::endl;
+      return false;
+    }
+
     vec_Vec3f vec_obs;
     vec_obs.resize(cloud_ptr->points.size());
     for (unsigned int i = 0; i < cloud_ptr->points.size(); i++) {
@@ -250,7 +264,7 @@ namespace opt_planner
     // add start time
     temp_ts.push_back(0.0);
 
-    for (size_t i = 0; i < path_size-1; i++)
+    for (size_t i = 0; i <= path_size-1; i++)
     {
       query_index = i;
       // check wehter or not we need to generate the point
@@ -309,9 +323,17 @@ namespace opt_planner
       hPolys.push_back(hPoly);
       int temp_index = path_size/2;
       std::cout << "the path_size is " << path_size << std::endl;
+      if (temp_index == 0){
+        temp_pts.push_back(0.5 * (path_pts[temp_index] + path_pts[temp_index+1]));
+        temp_ts.push_back(0.5 * time_res_);
+      }else
+      {
+        temp_pts.push_back(path_pts[temp_index]);
+        temp_ts.push_back(temp_index * time_res_);
+      }
       std::cout << "the temp_index is " << temp_index << std::endl;
-      temp_pts.push_back(path_pts[temp_index]);
-      temp_ts.push_back( temp_index* time_res_);
+      std::cout << "the hPolys size  is " << hPolys.size() << std::endl;
+
       final_size = 1;
     }
 

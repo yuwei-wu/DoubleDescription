@@ -36,6 +36,11 @@ namespace opt_planner
     nh.param("initial_offset/y", initial_offset_(1), 0.0);
 
     nh.param("multi_comm_range", multi_comm_range_, 3.0);
+    
+    
+    nh.param("forward_dist", forward_dist_, 2.0);
+    std::cout << "forward_dist_ is " << forward_dist_ << std::endl;
+
 
     nh.param("poly_srv_name", poly_srv_name_, std::string(" "));
 
@@ -48,7 +53,7 @@ namespace opt_planner
 
     /* callback */
     exec_timer_ = nh.createTimer(ros::Duration(0.01), &ReplanFSM::execFSMCallback, this);
-    safety_timer_ = nh.createTimer(ros::Duration(0.05), &ReplanFSM::checkCollisionCallback, this);
+    safety_timer_ = nh.createTimer(ros::Duration(0.02), &ReplanFSM::checkCollisionCallback, this);
 
     odom_sub_ = nh.subscribe("odom_world", 1, &ReplanFSM::odometryCallback, this);
     waypoint_sub_ = nh.subscribe("waypoints", 1, &ReplanFSM::waypointCallback, this);
@@ -56,10 +61,39 @@ namespace opt_planner
     //trajectory boardcast
     traj_goal_pub_ = nh.advertise<kr_tracker_msgs::PolyTrackerActionGoal>("tracker_cmd", 10);
 
+    //dodge trigger
+    trigger_sub_ = nh.subscribe("trigger", 1, &ReplanFSM::triggerCallback, this);
+    max_forward_dist_ = planner_manager_->grid_map_->getMapSize()(0) +
+                        planner_manager_->grid_map_->getOrigin()(0) - 1.0;
 
     // //dodge api
     // cmd_pub_ = nh.advertise<kr_tracker_msgs::PolyTrackerActionGoal>("tracker_cmd", 10);
+    
+  }
 
+  void ReplanFSM::triggerCallback(const std_msgs::EmptyConstPtr &msg)
+  {
+    if (abs(odom_pos_(0) - max_forward_dist_) < 1.0)
+    {
+      return;
+    }
+
+
+    trigger_ = true;
+    have_target_ = true;
+    waypoint_num_ = 1;
+    std::cout << "triggered new goal" << std::endl;
+
+    //set a waypoint in front of the drone
+    waypoints_[0][0] = std::min(odom_pos_(0) + forward_dist_, max_forward_dist_);
+    waypoints_[0][1] = odom_pos_(1);
+    waypoints_[0][2] = 1.5;
+
+    
+
+    current_wp_ = 0;
+    setGoal();
+  
   }
 
   void ReplanFSM::waypointCallback(const nav_msgs::PathConstPtr &msg)
@@ -210,11 +244,18 @@ namespace opt_planner
         std::cout << "have target" << std::endl;
         local_plan_fail_cnt_   = 0;
         std::cout << "setYaw" << std::endl;
-        setYaw();
+        //setYaw();
         
+        //check if the target is too close to the odom
+        if ((end_pt_ - odom_pos_).norm() < 0.3)
+        {
+          have_target_ = false;
+          changeFSMExecState(WAIT_TARGET, "FSM");
+          return;
+        }
 
         planner_manager_->setGlobalGoal(end_pt_);
-        changeFSMExecState(INIT_YAW, "FSM");
+        changeFSMExecState(GEN_NEW_TRAJ, "FSM");
         init_yaw_time_ = ros::Time::now();
       }
       break;
@@ -321,7 +362,7 @@ namespace opt_planner
       // else if((end_pt_ - pos).norm() < no_replan_thresh_){
 
       // }
-      else if (t_cur > 2.0)
+      else if (t_cur > 0.5)
       {
         cout << "[FSM] from exec to replan t_cur " << t_cur << endl;
         changeFSMExecState(REPLAN_TRAJ, "FSM");
@@ -458,6 +499,8 @@ namespace opt_planner
     traj_act_msg.goal.seg_x.resize(piece_num);
     traj_act_msg.goal.seg_y.resize(piece_num);
     traj_act_msg.goal.seg_z.resize(piece_num);
+
+    std::cout << "!!! durs" << durs << std::endl;
 
 
     for (int i = 0; i < piece_num; ++i)

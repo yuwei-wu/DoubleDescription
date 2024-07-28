@@ -421,8 +421,8 @@ void GridMap::projectDepthImage()
 
         /// std::cout << "proj_pt " << proj_pt << std::endl;
 
-        if (u == 320 && v == 240)
-          std::cout << "depth: " << depth << std::endl;
+        // if (u == 320 && v == 240)
+        //   std::cout << "depth: " << depth << std::endl;
         md_.proj_points_[md_.proj_points_cnt++] = proj_pt;
       }
     }
@@ -1068,7 +1068,7 @@ void GridMap::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &img)
 
 void GridMap::getPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud_ptr)
 {
-
+  
   cloud_ptr = latest_cloud_;
 }
 
@@ -1198,7 +1198,7 @@ void GridMap::publishMap()
 
 void GridMap::publishMapInflate(bool all_info)
 {
-  std::cout << "publishMapInflate" << std::endl;
+
   if (map_pub_.getNumSubscribers() <= 0)
     return;
 
@@ -1253,7 +1253,6 @@ void GridMap::publishMapInflate(bool all_info)
 
   pcl::toROSMsg(*inflated_cloud, cloud_msg);
   map_inf_pub_.publish(cloud_msg);
-  std::cout << "inflated_cloud->points.size();" << inflated_cloud->points.size() << std::endl;
   //ROS_INFO("pub map");
 }
 
@@ -1271,7 +1270,7 @@ void GridMap::getRegion(Eigen::Vector3d &ori, Eigen::Vector3d &size)
 void GridMap::depthOdomCallback(const sensor_msgs::ImageConstPtr &img,
                                 const nav_msgs::OdometryConstPtr &odom)
 {
-  std::cout << " ---------------- depthOdomCallback " << std::endl;
+  //std::cout << " ---------------- depthOdomCallback " << std::endl;
   if (img == nullptr || odom == nullptr)
   {
     std::cout << " ---------------- no img " << std::endl;
@@ -1296,7 +1295,7 @@ void GridMap::depthOdomCallback(const sensor_msgs::ImageConstPtr &img,
 
   Eigen::Matrix4d cam_T = body2world * md_.cam2body_;
 
-  std::cout << " cam_T  " << cam_T << std::endl;
+  //std::cout << " cam_T  " << cam_T << std::endl;
   md_.camera_pos_(0) = cam_T(0, 3);
   md_.camera_pos_(1) = cam_T(1, 3);
   md_.camera_pos_(2) = cam_T(2, 3);
@@ -1315,7 +1314,7 @@ void GridMap::depthOdomCallback(const sensor_msgs::ImageConstPtr &img,
   }
   cv_ptr->image.copyTo(md_.depth_image_);
 
-  std::cout << "depth: " << md_.depth_image_.cols << ", " << md_.depth_image_.rows << std::endl;
+  //std::cout << "depth: " << md_.depth_image_.cols << ", " << md_.depth_image_.rows << std::endl;
 
   md_.occ_need_update_ = true;
   md_.flag_use_depth_fusion = true;
